@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -826,52 +827,47 @@
                 .replace(/^###\s*(.+)$/gm, '### $1')
                 .replace(/^####\s*(.+)$/gm, '#### $1')
                 .replace(/^-\s+(.+)$/gm, '- $1') // Normalize lists
-                .replace(/^\d+\.\s+(.+)$/gm, '1. $1')
                 // Normalize tables
                 .replace(/^\|\s*(.*?)\s*\|$/gm, (match, row) => {
                     let cells = row.split('|').map(cell => cell.trim()).filter(cell => cell);
                     return `| ${cells.join(' | ')} |`;
                 })
-                .replace(/^\|[\s-:\|]+\|$/gm, (match) => {
-                    let cells = match.split('|').filter(cell => cell.trim()).length;
+                .replace(/^\|[\s:-]+\|$/gm, (match) => {
+                    let cells = match.split('|').filter(c => c.trim()).length;
                     return `| ${Array(cells).fill('---').join(' | ')} |`;
                 })
-                // Normalize statuses
-                .replace(/\*\*(HIGH RISK|MEDIUM RISK|LOW RISK|ON TRACK|RISK|NEEDS REVIEW)\*\*/g, '**$1**')
-                // Normalize trends
-                .replace(/(↑|↓|→)\s*(\(\d+\.\d+%\))/g, '$1 $2')
-                .replace(/[4t\/]/g, '→')
-                .replace(/\s{2,}/g, ' ')
-                .replace(/\|\s*\n/g, '|\n');
+                // Ensure consistent spacing
+                .replace(/\s{2,}/g, ' ');
 
-            console.debug('Cleaned Markdown:', cleaned);
+            console.debug('Normalized Markdown:', cleaned);
 
             try {
+                // Parse markdown to HTML
                 let html = marked.parse(cleaned);
 
-                // Post-process HTML
+                // Post-process HTML for styling
                 html = html
                     .replace(/<strong>(HIGH RISK|RISK)<\/strong>/g, '<span class="status-risk">$1</span>')
                     .replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>')
                     .replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>')
                     .replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-on-track">ON TRACK</span>')
                     .replace(/<strong>NEEDS REVIEW<\/strong>/g, '<span class="status-needs-review">NEEDS REVIEW</span>')
-                    .replace(/>(↑ \([\d.]+\%\))</g, '><span class="trend-up">$1</span><')
-                    .replace(/>(↓ \([\d.]+\%\))</g, '><span class="trend-down">$1</span><')
-                    .replace(/>(→)</g, '><span class="trend-stable">$1</span><')
+                    .replace(/>(↑ \([\d.]+\%\))/g, '><span class="trend-up">$1</span>')
+                    .replace(/>(↓ \([\d.]+\%\))/g, '><span class="trend-down">$1</span>')
+                    .replace(/>(→)/g, '><span class="trend-stable">$1</span>')
                     .replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">')
                     .replace(/<\/table>/g, '</table></div>');
 
                 console.debug('Rendered HTML:', html);
                 return html;
-            } catch (e) {
-                console.error('Markdown parsing error:', e);
-                return `<div class="error-message">Error rendering report content: ${e.message}</div>`;
+            } catch (error) {
+                console.error('Markdown parsing error:', error);
+                return `<div class="error-message">Error rendering report content: ${error.message}</div>`;
             }
         }
 
         document.getElementById('analyze-btn').addEventListener('click', async () => {
-            let folderPath = document.getElementById('folder-path').value.trim();
+            const folderPath = document.getElementById('folder-path').value.trim();
             if (!folderPath) {
                 showError('Please enter a folder path');
                 return;
@@ -917,7 +913,7 @@
                 const evaluation = response.data.evaluation || {};
                 const evaluationContent = `
                     <div class="evaluation-card">
-                        <h4>Analysis Quality Score</h4>
+                        <h4>Evaluation</h4>
                         <div class="score-display">${evaluation.score || 'N/A'}/100</div>
                         <p>${evaluation.text || 'No evaluation text provided.'}</p>
                     </div>
@@ -955,7 +951,7 @@
                     .replace(/</g, "&lt;")
                     .replace(/>/g, "&gt;")
                     .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;")
+                    .replace(/'/g, "&#39;")
                 : '';
         }
 
@@ -991,7 +987,6 @@
             editBtn.style.display = 'none';
             saveBtn.style.display = 'inline-block';
             cancelBtn.style.display = 'inline-block';
-            saveBtn();
         });
 
         saveBtn.addEventListener('click', () => {
