@@ -319,91 +319,94 @@
         }
 
         function processMarkdownContent(content) {
-    if (typeof content !== 'string') {
-        console.error('processMarkdownContent: Input is not a string:', content);
-        return '<p>Error: Invalid report content</p>';
-    }
-    let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
-
-    // --- AGGRESSIVE INITIAL CLEANING ---
-    // Normalize all line endings to LF (\n)
-    cleaned = cleaned.replace(/\r\n|\r/g, '\n');
-    // Replace all non-breaking spaces (U+00A0) with standard spaces (U+0020)
-    cleaned = cleaned.replace(/\u00A0/g, ' ');
-    // Remove other common problematic invisible characters (e.g., Zero Width No-Break Space U+FEFF, etc.)
-    cleaned = cleaned.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, ''); 
-    // --- END AGGRESSIVE INITIAL CLEANING ---
-    
-    // --- ENHANCED PRE-PROCESSING FOR HEADINGS ---
-    // Ensure any line starting with # is preceded by at least two newlines.
-    // This makes sure marked.js sees it as a new block.
-    // This is more robust than just checking for a preceding non-newline character.
-    cleaned = cleaned.replace(/^(\s*#+.*)$/gm, '\n\n$1');
-    // Also, remove any leading blank lines that might be added by the above if at the very start
-    cleaned = cleaned.replace(/^\n+/, '');
-    // --- END ENHANCED PRE-PROCESSING FOR HEADINGS ---
-
-    // --- REVISED PRE-PROCESSING FOR NUMBERED LISTS ---
-    const lines = cleaned.split('\n');
-    let reformattedLines = [];
-    let inNumberedListItem = false;
-    let currentListItemContent = [];
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const trimmedLine = line.trim();
-
-        const listItemMatch = line.match(/^(\d+\.\s+)(.+)$/);
-
-        if (listItemMatch) {
-            if (inNumberedListItem) {
-                reformattedLines.push(currentListItemContent.join('\n'));
-            }
-            inNumberedListItem = true;
-            currentListItemContent = [`${listItemMatch[1]}${listItemMatch[2].trim()}`];
-        } else if (inNumberedListItem && (line.startsWith(' ') || line.startsWith('\t') || trimmedLine === '')) {
-            if (trimmedLine === '') {
-                currentListItemContent.push('');
-            } else {
-                currentListItemContent.push('    ' + trimmedLine);
-            }
-        } else {
-            if (inNumberedListItem) {
-                reformattedLines.push(currentListItemContent.join('\n'));
-                inNumberedListItem = false;
-                currentListItemContent = [];
-            }
-            reformattedLines.push(line);
+        if (typeof content !== 'string') {
+            console.error('processMarkdownContent: Input is not a string:', content);
+            return '<p>Error: Invalid report content</p>';
         }
+        let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
+    
+        // --- CRITICAL: Replace all non-breaking spaces with standard spaces ---
+        // This is often the hidden cause of rendering issues, as they look like spaces
+        // but are treated differently by parsers.
+        cleaned = cleaned.replace(/\u00A0/g, ' ');
+    
+        // --- PRE-PROCESSING FOR HEADINGS (INCLUDING ALL SUBHEADINGS H1-H6) ---
+        // Ensure two newlines before headings if not already present, for proper block separation.
+        cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
+        // --- END PRE-PROCESSING FOR HEADINGS ---
+    
+        // --- MORE ROBUST PRE-PROCESSING FOR NUMBERED LISTS ---
+        // This section aims to identify and reformat numbered lists more explicitly.
+        const lines = cleaned.split('\n');
+        let reformattedLines = [];
+        let inNumberedListItem = false;
+        let currentListItemContent = [];
+    
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmedLine = line.trim();
+    
+            // Check if it's the start of a new numbered list item
+            const listItemMatch = line.match(/^(\d+\.\s+)(.+)$/);
+    
+            if (listItemMatch) {
+                // If we were in a list item, push its collected content
+                if (inNumberedListItem) {
+                    reformattedLines.push(currentListItemContent.join('\n'));
+                }
+                inNumberedListItem = true;
+                currentListItemContent = [`${listItemMatch[1]}${listItemMatch[2].trim()}`]; // Start new item, trim content
+            } else if (inNumberedListItem && (line.startsWith(' ') || line.startsWith('\t') || trimmedLine === '')) {
+                // This line is indented or empty, assume it's a continuation of the current list item
+                // Indent continuation lines by 4 spaces (standard markdown for continued paragraphs in lists)
+                if (trimmedLine === '') {
+                    currentListItemContent.push(''); // Preserve blank lines within a list item
+                } else {
+                    currentListItemContent.push('    ' + trimmedLine);
+                }
+            } else {
+                // Not a list item continuation or a new list item, so end the current list item
+                if (inNumberedListItem) {
+                    reformattedLines.push(currentListItemContent.join('\n'));
+                    inNumberedListItem = false;
+                    currentListItemContent = [];
+                }
+                reformattedLines.push(line); // Add the non-list line as is
+            }
+        }
+    
+        // Push the last collected list item if loop ends while in a list
+        if (inNumberedListItem) {
+            reformattedLines.push(currentListItemContent.join('\n'));
+        }
+    
+        cleaned = reformattedLines.join('\n');
+        // Ensure blank lines after lists for proper block separation if a list is immediately followed by other content
+        cleaned = cleaned.replace(/(\n)(\d+\.\s.*)(\n)(\S)/g, '$1$2\n\n$4');
+        // --- END ROBUST PRE-PROCESSING FOR NUMBERED LISTS ---
+    
+        // Now, pass the cleaned markdown to marked.js
+        let html = marked.parse(cleaned);
+    
+        // Apply custom status/trend spans
+        html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
+        html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
+        html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
+        html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
+        html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
+        html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
+        html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
+    
+        // Add Bootstrap table classes (if tables were not pre-processed into HTML already)
+        // If preProcessTables function is actively converting markdown tables to HTML,
+        // these lines might be redundant or could cause issues if not carefully managed.
+        // Assuming preProcessTables is used, we might want to remove these or ensure they don't double-apply.
+        // For this context, keeping them as they are for general Markdown table parsing by marked.js.
+        html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
+        html = html.replace(/<\/table>/g, '</table></div>');
+    
+        return html;
     }
-
-    if (inNumberedListItem) {
-        reformattedLines.push(currentListItemContent.join('\n'));
-    }
-
-    cleaned = reformattedLines.join('\n');
-    // Ensure blank lines after lists for proper block separation if a list is immediately followed by other content.
-    cleaned = cleaned.replace(/^((\d+\.\s+.*?\n)(?:\s+.*?\n)*)(\S)/gm, '$1\n$4');
-    // --- END REVISED PRE-PROCESSING FOR NUMBERED LISTS ---
-
-    // Now, pass the cleaned markdown to marked.js
-    let html = marked.parse(cleaned);
-
-    // Apply custom status/trend spans
-    html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
-    html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
-    html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
-    html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
-    html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
-    html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
-    html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
-
-    // Add Bootstrap table classes (if tables were not pre-processed into HTML already)
-    html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
-    html = html.replace(/<\/table>/g, '</table></div>');
-
-    return html;
-}
 
         // The htmlToMarkdown function as provided in the previous full file
         function htmlToMarkdown(htmlContent) {
