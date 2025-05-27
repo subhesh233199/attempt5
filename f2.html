@@ -309,41 +309,123 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script>
+        // New function to custom parse tables
+        function preProcessTables(markdown) {
+            // Regex to find potential table blocks
+            // This regex looks for a line starting with '|', followed by more lines,
+            // and importantly, a separator line (e.g., |---|---|)
+            const tableRegex = /(\|\s*.+\s*\|\s*\n\s*\|[\s\-\|:]+\|\s*\n(?:\|\s*.+\s*\|\s*\n)*)/g;
+            let html = markdown;
+
+            let match;
+            while ((match = tableRegex.exec(markdown)) !== null) {
+                const tableMarkdown = match[0];
+                const lines = tableMarkdown.trim().split('\n').filter(line => line.trim() !== '');
+
+                if (lines.length < 2) continue; // Needs at least header and separator
+
+                let tableHtml = '<div class="table-responsive"><table class="table table-bordered">';
+                
+                // Extract header and separator
+                const headerLine = lines[0];
+                const separatorLine = lines[1];
+
+                // Basic check for a valid separator line to confirm it's a table
+                if (!separatorLine.match(/^\|[\s\-\|:]+\|$/)) {
+                    // If not a valid separator, continue and let marked.js try to handle it or skip
+                    continue;
+                }
+
+                // Parse header
+                const headers = headerLine.split('|').map(h => h.trim()).filter(h => h !== '');
+                if (headers.length > 0) {
+                    tableHtml += '<thead><tr>';
+                    headers.forEach(header => {
+                        tableHtml += `<th>${header}</th>`;
+                    });
+                    tableHtml += '</tr></thead>';
+                }
+
+                // Parse body rows (starting from the 3rd line)
+                if (lines.length > 2) {
+                    tableHtml += '<tbody>';
+                    for (let i = 2; i < lines.length; i++) {
+                        const rowLine = lines[i];
+                        const cells = rowLine.split('|').map(c => c.trim()).filter(c => c !== '');
+                        
+                        // Ensure the number of cells matches the number of headers
+                        if (cells.length === headers.length) {
+                            tableHtml += '<tr>';
+                            cells.forEach(cell => {
+                                // Apply custom status/trend formatting if needed
+                                let cellContent = cell;
+                                if (cell.includes('HIGH RISK')) {
+                                    cellContent = `<span class="status-high">HIGH RISK</span>`;
+                                } else if (cell.includes('MEDIUM RISK')) {
+                                    cellContent = `<span class="status-medium">MEDIUM RISK</span>`;
+                                } else if (cell.includes('LOW RISK') || cell.includes('ON TRACK')) {
+                                    cellContent = `<span class="status-low">${cell.replace('LOW RISK', 'LOW RISK').replace('ON TRACK', 'ON TRACK')}</span>`;
+                                } else if (cell.includes('↑')) {
+                                    cellContent = `<span class="trend-up">${cell}</span>`;
+                                } else if (cell.includes('↓')) {
+                                    cellContent = `<span class="trend-down">${cell}</span>`;
+                                } else if (cell.includes('→')) {
+                                    cellContent = `<span class="trend-neutral">→</span>`;
+                                }
+                                tableHtml += `<td>${cellContent}</td>`;
+                            });
+                            tableHtml += '</tr>';
+                        }
+                    }
+                    tableHtml += '</tbody>';
+                }
+                
+                tableHtml += '</table></div>';
+
+                // Replace the markdown table with the generated HTML table
+                html = html.replace(tableMarkdown, tableHtml);
+                // Reset regex lastIndex to continue searching from the beginning of the modified string
+                tableRegex.lastIndex = 0; 
+            }
+
+            return html;
+        }
+
+        // Original processMarkdownContent, now without table handling
         function processMarkdownContent(content) {
-    if (typeof content !== 'string') {
-        console.error('processMarkdownContent: Input is not a string:', content);
-        return '<p>Error: Invalid report content</p>';
-    }
-    let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
+            if (typeof content !== 'string') {
+                console.error('processMarkdownContent: Input is not a string:', content);
+                return '<p>Error: Invalid report content</p>';
+            }
+            let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
+            
+            // --- PRE-PROCESSING FOR HEADINGS (INCLUDING ALL SUBHEADINGS H1-H6) ---
+            cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
+            // --- END PRE-PROCESSING ---
 
-    // Ensure two newlines before headings (already good)
-    cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
+            // Marked.js will now parse everything EXCEPT the tables (which are already HTML)
+            let html = marked.parse(cleaned);
+            
+            // Apply status and trend spans for any text that might still be processed by marked.js
+            html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
+            html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
+            html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
+            html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
+            html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
+            html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
+            html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
+            
+            // Remove the table responsive div and table classes if Marked.js somehow applies it
+            // This is a safety measure in case Marked.js attempts to parse something as a table
+            // after our custom parsing. Our custom parsing already adds these classes.
+            html = html.replace(/<div class="table-responsive"><table class="table table-bordered">/g, '<table>');
+            html = html.replace(/<\/table><\/div>/g, '</table>');
 
-    // --- ENHANCED PRE-PROCESSING FOR TABLES ---
-    // This step aims to ensure that any line starting with a '|' (which signifies a table row)
-    // is preceded by at least two newlines, if it's not already.
-    // It targets cases where a table might be directly after a paragraph or another element.
-    cleaned = cleaned.replace(/(\S)\n\s*(\|)/g, '$1\n\n$2');
 
-    // Also, ensure a blank line after a table if it's immediately followed by other content.
-    // This helps isolate the table block.
-    // This regex looks for a table-like line (ending with a pipe, potentially followed by spaces and a newline)
-    // and then non-whitespace character on the next line.
-    cleaned = cleaned.replace(/(\|\s*\n)(\S)/g, '$1\n$2');
-    // --- END ENHANCED PRE-PROCESSING FOR TABLES ---
+            return html;
+        }
 
-    let html = marked.parse(cleaned);
-    html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
-    html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
-    html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
-    html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
-    html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
-    html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
-    html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
-    html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
-    html = html.replace(/<\/table>/g, '</table></div>');
-    return html;
-}
+        // New htmlToMarkdown function to convert HTML tables back to Markdown
         function htmlToMarkdown(htmlContent) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(`<div>${htmlContent}</div>`, 'text/html');
@@ -358,42 +440,71 @@
 
                 let result = '';
                 const tagName = node.tagName.toLowerCase();
-                const childrenMarkdown = Array.from(node.childNodes).map(processNode).filter(Boolean).join('\n');
+                let childrenMarkdown = '';
+                if (node.childNodes.length > 0) {
+                     childrenMarkdown = Array.from(node.childNodes).map(processNode).filter(Boolean).join(''); // Join without newlines for inline elements
+                }
+
 
                 if (tagName === 'h1') {
-                    result = `# ${childrenMarkdown}\n`;
+                    result = `# ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'h2') {
-                    result = `## ${childrenMarkdown}\n`;
+                    result = `## ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'h3') {
-                    result = `### ${childrenMarkdown}\n`;
+                    result = `### ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'p') {
-                    result = `${childrenMarkdown}\n`;
-                } else if (tagName === 'table') {
-                    const rows = Array.from(node.querySelectorAll('tr'));
-                    if (rows.length === 0) return '';
-                    const headers = Array.from(rows[0].querySelectorAll('th, td')).map(cell => cell.textContent.trim());
-                    const separator = headers.map(() => '---');
-                    const bodyRows = rows.slice(1).map(row => 
-                        Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()).join(' | ')
-                    );
-                    result = `| ${headers.join(' | ')} |\n| ${separator.join(' | ')} |\n${bodyRows.map(row => `| ${row} |`).join('\n')}\n`;
+                    result = `${childrenMarkdown}\n\n`;
+                } else if (tagName === 'div' && node.className.includes('table-responsive')) {
+                    // Handle the custom-generated table HTML
+                    const table = node.querySelector('table');
+                    if (table) {
+                        const rows = Array.from(table.querySelectorAll('tr'));
+                        if (rows.length === 0) return '';
+                        
+                        const headers = Array.from(rows[0].querySelectorAll('th, td')).map(cell => cell.textContent.trim());
+                        const separator = headers.map(() => '---').join(' | ');
+                        
+                        let tableMarkdown = `| ${headers.join(' | ')} |\n| ${separator} |\n`;
+                        
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            const cells = Array.from(row.querySelectorAll('td')).map(cell => {
+                                // Extract text content from spans if they were applied
+                                const span = cell.querySelector('span');
+                                return span ? span.textContent.trim() : cell.textContent.trim();
+                            });
+                            tableMarkdown += `| ${cells.join(' | ')} |\n`;
+                        }
+                        result = `\n${tableMarkdown}\n`; // Add newlines around the table for proper markdown block
+                    }
                 } else if (tagName === 'span') {
                     const className = node.className;
                     if (className.includes('status-') || className.includes('trend-')) {
-                        result = `**${childrenMarkdown}**`;
+                        // Revert specific spans back to their bold markdown equivalent if they contained specific text
+                        if (childrenMarkdown.includes('HIGH RISK') || childrenMarkdown.includes('MEDIUM RISK') || childrenMarkdown.includes('LOW RISK') || childrenMarkdown.includes('ON TRACK')) {
+                             result = `**${childrenMarkdown.replace(/<[^>]*>/g, '')}**`; // Remove any inner HTML from spans before bolding
+                        } else if (childrenMarkdown.includes('↑') || childrenMarkdown.includes('↓') || childrenMarkdown.includes('→')) {
+                             result = `**${childrenMarkdown.replace(/<[^>]*>/g, '')}**`;
+                        } else {
+                            result = childrenMarkdown; // For other spans, just return content
+                        }
                     } else {
                         result = childrenMarkdown;
                     }
-                } else if (tagName === 'div' && node.className.includes('table-responsive')) {
-                    result = processNode(node.querySelector('table') || node);
-                } else {
+                } else if (tagName === 'strong') { // Handle existing strong tags
+                    result = `**${childrenMarkdown}**`;
+                }
+                else {
                     result = childrenMarkdown;
                 }
 
                 return result;
             }
 
+            // Process all nodes and then clean up extra newlines for a more standard markdown output
             markdown = processNode(root).trim();
+            // Reduce multiple newlines to at most two
+            markdown = markdown.replace(/\n{3,}/g, '\n\n');
             return markdown;
         }
 
@@ -427,10 +538,11 @@
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
 
-                // Directly process and display the report content from the backend
                 const reportMarkdownFromServer = response.data.report;
-                const processedHtmlReport = processMarkdownContent(reportMarkdownFromServer);
-                document.getElementById('reportContent').innerHTML = processedHtmlReport;
+                // First, custom process tables, then let marked.js handle the rest
+                const markdownWithHtmlTables = preProcessTables(reportMarkdownFromServer);
+                const finalProcessedHtmlReport = processMarkdownContent(markdownWithHtmlTables);
+                document.getElementById('reportContent').innerHTML = finalProcessedHtmlReport;
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
                     `<div class="col-md-6 mb-4">
@@ -484,14 +596,15 @@
 
         saveBtn.addEventListener('click', () => {
             const editedHtml = reportContentDiv.innerHTML;
-            const markdownContent = htmlToMarkdown(editedHtml);
+            const markdownContent = htmlToMarkdown(editedHtml); // Convert edited HTML back to Markdown
             const validation = validateMarkdownContent(markdownContent);
             if (!validation.isValid) {
                 alert(`Invalid report structure. Missing sections: ${validation.missingSections.join(', ')}. Please ensure all required sections are present.`);
                 return;
             }
-            // Removed localStorage.setItem('savedReportContent', markdownContent);
-            const reprocessedContent = processMarkdownContent(markdownContent);
+            // Now, process the markdown content (which might have new tables)
+            const markdownWithHtmlTables = preProcessTables(markdownContent); // Re-process tables for newly typed markdown
+            const reprocessedContent = processMarkdownContent(markdownWithHtmlTables); // Then process other markdown
             reportContentDiv.innerHTML = reprocessedContent;
             reportContentDiv.contentEditable = false;
             editBtn.style.display = 'inline-block';
@@ -501,7 +614,6 @@
 
         cancelBtn.addEventListener('click', () => {
             reportContentDiv.innerHTML = originalContent; // Revert to the HTML before editing
-            // Removed localStorage.setItem('savedReportContent', originalMarkdown);
             reportContentDiv.contentEditable = false;
             editBtn.style.display = 'inline-block';
             saveBtn.style.display = 'none';
