@@ -316,7 +316,7 @@
             }
             let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
             
-            // --- PRE-PROCESSING FOR HEADINGS (INCLUDING SUBHEADINGS) ---
+            // --- PRE-PROCESSING FOR HEADINGS (INCLUDING ALL SUBHEADINGS H1-H6) ---
             // This regex matches a character that is NOT a newline, followed by a heading marker (#, ##, ### etc.) and a space.
             // It inserts two newlines before the heading marker to ensure proper block separation for Marked.js.
             cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
@@ -330,6 +330,7 @@
             html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
             html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
             html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
+            // These lines already apply Bootstrap classes to tables that are correctly parsed by Marked.js
             html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
             html = html.replace(/<\/table>/g, '</table></div>');
             return html;
@@ -481,7 +482,7 @@
                 alert(`Invalid report structure. Missing sections: ${validation.missingSections.join(', ')}. Please ensure all required sections are present.`);
                 return;
             }
-            // Removed: localStorage.setItem('savedReportContent', markdownContent);
+            // Removed localStorage.setItem('savedReportContent', markdownContent);
             const reprocessedContent = processMarkdownContent(markdownContent);
             reportContentDiv.innerHTML = reprocessedContent;
             reportContentDiv.contentEditable = false;
@@ -492,7 +493,7 @@
 
         cancelBtn.addEventListener('click', () => {
             reportContentDiv.innerHTML = originalContent; // Revert to the HTML before editing
-            // Removed: localStorage.setItem('savedReportContent', originalMarkdown);
+            // Removed localStorage.setItem('savedReportContent', originalMarkdown);
             reportContentDiv.contentEditable = false;
             editBtn.style.display = 'inline-block';
             saveBtn.style.display = 'none';
