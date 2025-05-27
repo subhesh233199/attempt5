@@ -7,175 +7,121 @@
     <!-- Tailwind CSS CDN for professional styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Poppins for modern typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Marked.js for markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked@4.0.12/lib/marked.min.js"></script>
     <style>
-        /* Enhanced color palette */
+        /* Root styles for consistent typography and colors */
         :root {
-            --primary-blue: #1e40af; /* More vibrant blue */
-            --primary-blue-light: #3b82f6;
-            --button-primary: #2563eb;
-            --button-primary-hover: #1d4ed8;
-            --button-secondary: #64748b;
-            --button-secondary-hover: #475569;
-            --button-destructive: #dc2626;
-            --button-destructive-hover: #b91c1c;
-            --button-success: #16a34a;
-            --button-success-hover: #15803d;
-            --gray-bg: #f8fafc;
-            --panel-bg: #ffffff;
-            --text-dark: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --border-radius: 0.5rem;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --primary-color: #2c3e50; /* Dark blue-gray for headers */
+            --secondary-color: #34495e; /* Darker blue-gray for secondary actions */
+            --accent-color: #3498db; /* Bright blue for primary buttons */
+            --text-color: #2c3e50; /* Dark blue-gray for text */
+            --light-bg: #ecf0f1; /* Light gray background */
+            --card-bg: #ffffff; /* White for panels */
+            --border-color: #ced4da; /* Light gray for borders */
+            --success-color: #27ae60; /* Green for success actions */
+            --warning-color: #f39c12; /* Orange for warnings */
+            --danger-color: #e74c3c; /* Red for destructive actions */
+            --shadow-light: rgba(0, 0, 0, 0.08); /* Light shadow */
+            --shadow-medium: rgba(0, 0, 0, 0.15); /* Medium shadow */
+            --dark-bg: #212529; /* Dark gray for potential use */
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: var(--gray-bg);
-            color: var(--text-dark);
-            line-height: 1.6;
-        }
-
-        /* Smooth scroll behavior */
-        html {
-            scroll-behavior: smooth;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            font-weight: 400; /* Regular weight for body text */
         }
 
         /* Container styles */
         .container {
-            max-width: 1440px;
+            max-width: 1280px;
             margin-left: auto;
             margin-right: auto;
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
-        /* Header styles with gradient */
+        /* Header styles */
         .header {
-            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+            background-color: var(--primary-color);
             color: white;
-            padding: 2rem 1.5rem;
-            border-radius: 0;
+            padding: 1.5rem;
+            border-radius: 0.5rem 0.5rem 0 0;
             text-align: center;
-            box-shadow: var(--shadow);
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-            transform: rotate(30deg);
+            box-shadow: var(--shadow-medium);
         }
 
         .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            position: relative;
+            font-size: 1.75rem;
+            font-weight: 600; /* Semi-bold for headers */
         }
 
         .header p {
-            font-size: 1rem;
+            font-size: 0.875rem;
             font-weight: 400;
-            opacity: 0.9;
-            max-width: 600px;
-            margin: 0 auto;
-            position: relative;
+            opacity: 0.85;
         }
 
-        /* Panel styles with subtle hover effect */
+        /* Panel styles */
         .panel {
-            background-color: var(--panel-bg);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
+            background-color: var(--card-bg);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-light);
             margin-bottom: 2rem;
             padding: 2rem;
-            transition: var(--transition);
-            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s;
         }
 
         .panel:hover {
-            box-shadow: var(--shadow-md);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
         }
 
         .panel h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            color: var(--primary-blue);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600; /* Semi-bold for section headers */
+            margin-bottom: 1rem;
+            color: var(--text-color);
         }
 
-        .panel h2::before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 24px;
-            background: linear-gradient(to bottom, var(--primary-blue), var(--primary-blue-light));
-            border-radius: 4px;
-        }
-
-        /* Input styles with focus states */
-        input[type="text"], textarea {
+        /* Input styles */
+        input[type="text"] {
             border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 0.875rem 1.25rem;
-            font-size: 0.9375rem;
+            border-radius: 0.375rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
             font-weight: 400;
             width: 100%;
-            transition: var(--transition);
-            background-color: var(--panel-bg);
-            color: var(--text-dark);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-color);
         }
 
-        input[type="text"]:focus, textarea:focus {
+        input[type="text"]:focus {
             outline: none;
-            border-color: var(--primary-blue-light);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
 
-        /* Button styles with icons */
+        /* Button styles */
         button {
             font-family: 'Poppins', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 500;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
+            font-size: 0.625rem; /* Smaller text size (10px) */
+            font-weight: 500; /* Medium weight for buttons */
+            padding: 0.45rem 0.9rem; /* Adjusted for smaller text */
+            border-radius: 0.375rem;
             border: none;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #5dade2 100%);
             color: white;
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition);
+            box-shadow: var(--shadow-light);
+            transition: background 0.3s, transform 0.2s, box-shadow 0.2s, opacity 0.2s;
             cursor: pointer;
             position: relative;
             overflow: hidden;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
         }
 
-        button i {
-            font-size: 0.875rem;
-        }
-
-        button::after {
+        button::before {
             content: '';
             position: absolute;
             top: 0;
@@ -183,131 +129,112 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.6s;
+            transition: left 0.3s;
         }
 
-        button:hover::after {
+        button:hover::before {
             left: 100%;
         }
 
         button:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow);
+            background: linear-gradient(135deg, #2980b9 0%, var(--accent-color) 100%);
+            transform: scale(1.05);
+            box-shadow: var(--shadow-medium), 0 0 8px rgba(52, 152, 219, 0.2);
         }
 
         button:active {
-            transform: translateY(0);
-            box-shadow: var(--shadow-sm);
+            transform: scale(0.95);
+            opacity: 0.9;
         }
 
         button:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
         }
 
         /* Specific button styles */
-        #analyze-btn {
-            background: linear-gradient(135deg, var(--button-primary) 0%, var(--primary-blue-light) 100%);
-        }
-
-        #analyze-btn:hover {
-            background: linear-gradient(135deg, var(--button-primary-hover) 0%, var(--button-primary) 100%);
-        }
-
         #clear-cache-btn {
-            background: linear-gradient(135deg, var(--button-destructive) 0%, #ef4444 100%);
+            background: linear-gradient(135deg, var(--danger-color) 0%, #f1948a 100%);
         }
 
         #clear-cache-btn:hover {
-            background: linear-gradient(135deg, var(--button-destructive-hover) 0%, var(--button-destructive) 100%);
+            background: linear-gradient(135deg, #c0392b 0%, var(--danger-color) 100%);
+            box-shadow: var(--shadow-medium), 0 0 8px rgba(231, 76, 60, 0.2);
         }
 
         #save-changes-btn {
-            background: linear-gradient(135deg, var(--button-success) 0%, #4ade80 100%);
+            background: linear-gradient(135deg, var(--success-color) 0%, #52be80 100%);
         }
 
         #save-changes-btn:hover {
-            background: linear-gradient(135deg, var(--button-success-hover) 0%, var(--button-success) 100%);
+            background: linear-gradient(135deg, #219653 0%, var(--success-color) 100%);
+            box-shadow: var(--shadow-medium), 0 0 8px rgba(39, 174, 96, 0.2);
         }
 
         #cancel-btn {
-            background: linear-gradient(135deg, var(--button-secondary) 0%, #94a3b8 100%);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #566573 100%);
         }
 
         #cancel-btn:hover {
-            background: linear-gradient(135deg, var(--button-secondary-hover) 0%, var(--button-secondary) 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, var(--secondary-color) 100%);
+            box-shadow: var(--shadow-medium), 0 0 8px rgba(52, 73, 94, 0.2);
         }
 
-        #download-pdf-btn, #modify-report-btn, #submit-comment-btn, #correct-data-btn, #edit-report-btn {
-            background: linear-gradient(135deg, var(--button-primary) 0%, var(--primary-blue-light) 100%);
+        #download-pdf-btn, #modify-report-btn, #submit-comment-btn, #correct-data-btn {
+            background: linear-gradient(135deg, var(--accent-color) 0%, #5dade2 100%);
         }
 
-        #download-pdf-btn:hover, #modify-report-btn:hover, #submit-comment-btn:hover, #correct-data-btn:hover, #edit-report-btn:hover {
-            background: linear-gradient(135deg, var(--button-primary-hover) 0%, var(--button-primary) 100%);
-        }
-
-        /* Button group styling */
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
+        #download-pdf-btn:hover, #modify-report-btn:hover, #submit-comment-btn:hover, #correct-data-btn:hover {
+            background: linear-gradient(135deg, #2980b9 0%, var(--accent-color) 100%);
+            box-shadow: var(--shadow-medium), 0 0 8px rgba(52, 152, 219, 0.2);
         }
 
         /* Markdown content styles */
         #report-content {
             max-width: 100%;
             overflow-x: auto;
-            font-size: 0.9375rem;
-            line-height: 1.7;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            font-weight: 400;
+            color: var(--text-color);
         }
 
         #report-content h1 {
             font-size: 1.75rem;
             font-weight: 600;
-            margin-bottom: 1.5rem;
-            color: var(--primary-blue);
+            margin-bottom: 1.25rem;
+            color: var(--primary-color);
             border-bottom: 2px solid var(--border-color);
-            padding-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
         }
 
         #report-content h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-            color: var(--text-dark);
-        }
-
-        #report-content h3 {
             font-size: 1.25rem;
             font-weight: 600;
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
-            color: var(--text-dark);
+            color: var(--text-color);
+        }
+
+        #report-content h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
         }
 
         #report-content p {
-            margin-bottom: 1.25rem;
-            color: var(--text-muted);
-        }
-
-        #report-content ul, #report-content ol {
-            margin-left: 1.5rem;
-            margin-bottom: 1.5rem;
-            color: var(--text-muted);
+            margin-bottom: 1rem;
+            color: var(--text-color);
+            opacity: 0.85;
         }
 
         #report-content ul {
             list-style-type: disc;
-        }
-
-        #report-content ol {
-            list-style-type: decimal;
-        }
-
-        #report-content li {
-            margin-bottom: 0.5rem;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-color);
         }
 
         #report-content table {
@@ -316,90 +243,55 @@
             border-spacing: 0;
             margin-bottom: 1.5rem;
             border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
+            border-radius: 0.375rem;
             overflow: hidden;
-            box-shadow: var(--shadow-sm);
         }
 
         #report-content th,
         #report-content td {
-            padding: 0.875rem 1rem;
+            padding: 0.75rem 1rem;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
         }
 
         #report-content th {
-            background-color: var(--primary-blue);
+            background-color: var(--primary-color);
             color: white;
-            font-weight: 500;
+            font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.8125rem;
-            letter-spacing: 0.05em;
+            font-size: 0.75rem;
         }
 
         #report-content tr:nth-child(even) {
-            background-color: #f8fafc;
+            background-color: var(--light-bg);
         }
 
         #report-content tr:hover {
-            background-color: #f1f5f9;
+            background-color: #dfe6e9;
         }
 
         #report-content strong {
             font-weight: 600;
-            color: var(--primary-blue);
-        }
-
-        #report-content a {
-            color: var(--primary-blue-light);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        #report-content a:hover {
-            text-decoration: underline;
-        }
-
-        #report-content code {
-            font-family: 'Courier New', monospace;
-            background-color: #f1f5f9;
-            padding: 0.2rem 0.4rem;
-            border-radius: 0.25rem;
-            font-size: 0.875rem;
-            color: #334155;
-        }
-
-        #report-content pre {
-            background-color: #f1f5f9;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            overflow-x: auto;
-            margin-bottom: 1.5rem;
-        }
-
-        #report-content pre code {
-            background-color: transparent;
-            padding: 0;
-        }
-
-        #report-content blockquote {
-            border-left: 4px solid var(--primary-blue-light);
-            padding-left: 1rem;
-            margin-left: 0;
-            color: var(--text-muted);
-            font-style: italic;
-            margin-bottom: 1.5rem;
+            color: var(--accent-color);
         }
 
         /* Textarea styles */
         textarea {
-            min-height: 150px;
             border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 1rem;
-            font-size: 0.9375rem;
-            line-height: 1.6;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 400;
+            width: 100%;
             resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-color);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
 
         /* Hide elements by default */
@@ -407,154 +299,81 @@
             display: none;
         }
 
-        /* Loading state with animation */
+        /* Loading state */
         #loading {
             display: none;
             text-align: center;
-            padding: 3rem;
-            background-color: var(--panel-bg);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 2rem;
+            padding: 2rem;
+            background-color: var(--card-bg);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-light);
+            color: var(--text-color);
+            font-weight: 400;
         }
 
-        .loading-spinner {
-            display: inline-block;
-            width: 2.5rem;
-            height: 2.5rem;
-            border: 3px solid rgba(59, 130, 246, 0.2);
-            border-radius: 50%;
-            border-top-color: var(--primary-blue-light);
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 1.5rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        #loading p:first-of-type {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--primary-blue);
-            margin-bottom: 0.5rem;
-        }
-
-        #loading p:last-of-type {
-            font-size: 0.9375rem;
-            color: var(--text-muted);
-        }
-
-        /* Utility classes */
+        /* Utility to hide elements */
         .hidden {
             display: none !important;
-        }
-
-        .flex-grow {
-            flex-grow: 1;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-            
-            .panel {
-                padding: 1.5rem;
-            }
-            
-            .header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .button-group {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-            }
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>RRR Analysis Tool</h1>
-        <p>Efficiently analyze and process your PDF documents with AI-powered insights</p>
+        <p>Efficiently analyze your PDF documents</p>
     </div>
 
     <div class="container">
         <!-- Input Folder Section -->
         <div class="panel">
-            <h2><i class="fas fa-folder-open mr-2"></i>Input Folder</h2>
+            <h2>Input Folder</h2>
             <div class="flex flex-col sm:flex-row gap-4">
-                <input type="text" id="folder-path" class="flex-grow" placeholder="Enter folder path or drag and drop PDF files">
-                <button id="analyze-btn"><i class="fas fa-search mr-1"></i> Analyze Documents</button>
-                <button id="clear-cache-btn"><i class="fas fa-trash-alt mr-1"></i> Clear Cache</button>
+                <input type="text" id="folder-path" class="flex-grow" placeholder="Enter folder path">
+                <button id="analyze-btn">Analyze</button>
+                <button id="clear-cache-btn">Clear Cache</button>
             </div>
         </div>
 
         <!-- Loading Indicator -->
         <div id="loading">
-            <div class="loading-spinner"></div>
-            <p>Processing your documents...</p>
-            <p>This may take a few moments depending on the number and size of files</p>
+            <p class="text-lg font-semibold">Loading...</p>
+            <p class="text-sm">Analyzing PDFs... This may take a few moments.</p>
         </div>
 
         <!-- Analysis Report Section -->
         <div class="panel">
-            <h2><i class="fas fa-file-alt mr-2"></i>Analysis Report</h2>
+            <h2>Analysis Report</h2>
             <div id="report-content"></div>
-            <textarea id="report-editor" rows="10" placeholder="Edit your report content here..."></textarea>
-            <textarea id="modify-instructions" rows="4" placeholder="Enter specific instructions to modify the report..."></textarea>
-            <textarea id="comment-input" rows="4" placeholder="Enter your comments or feedback..."></textarea>
-            <textarea id="correct-data-input" rows="4" placeholder="Enter any data corrections needed..."></textarea>
-            <div class="button-group">
-                <button id="edit-report-btn"><i class="fas fa-edit mr-1"></i> Edit Report</button>
-                <button id="save-changes-btn" class="hidden"><i class="fas fa-save mr-1"></i> Save Changes</button>
-                <button id="cancel-btn" class="hidden"><i class="fas fa-times mr-1"></i> Cancel</button>
-                <button id="download-pdf-btn"><i class="fas fa-file-pdf mr-1"></i> Download as PDF</button>
-                <button id="modify-report-btn"><i class="fas fa-magic mr-1"></i> Modify Report</button>
-                <button id="submit-comment-btn"><i class="fas fa-comment mr-1"></i> Submit Comment</button>
-                <button id="correct-data-btn"><i class="fas fa-check-circle mr-1"></i> Correct Data</button>
+            <textarea id="report-editor" rows="10"></textarea>
+            <textarea id="modify-instructions" rows="4" placeholder="Enter instructions to modify the report"></textarea>
+            <textarea id="comment-input" rows="4" placeholder="Enter comments to submit"></textarea>
+            <textarea id="correct-data-input" rows="4" placeholder="Enter data corrections"></textarea>
+            <div class="mt-6 flex flex-wrap gap-4">
+                <button id="edit-report-btn">Edit Report</button>
+                <button id="save-changes-btn" class="hidden">Save Changes</button>
+                <button id="cancel-btn" class="hidden">Cancel</button>
+                <button id="download-pdf-btn">Download as PDF</button>
+                <button id="modify-report-btn">Modify Report</button>
+                <button id="submit-comment-btn">Submit Comment</button>
+                <button id="correct-data-btn">Correct Data</button>
             </div>
         </div>
 
-        <!-- Visualizations Section -->
+        <!-- Visualizations Section (Untouched) -->
         <div class="panel">
-            <h2><i class="fas fa-chart-bar mr-2"></i>Visualizations</h2>
+            <h2>Visualizations</h2>
             <div id="visualizations"></div>
         </div>
 
-        <!-- Evaluation Section -->
+        <!-- Evaluation Section (Untouched) -->
         <div class="panel">
-            <h2><i class="fas fa-star mr-2"></i>Evaluation</h2>
+            <h2>Evaluation</h2>
             <div id="evaluation"></div>
         </div>
 
-        <!-- Hyperlinks Section -->
+        <!-- Hyperlinks Section (Untouched) -->
         <div class="panel">
-            <h2><i class="fas fa-link mr-2"></i>Hyperlinks</h2>
+            <h2>Hyperlinks</h2>
             <div id="hyperlinks"></div>
         </div>
     </div>
@@ -632,7 +451,7 @@
 
         // Handle Clear Cache button click
         clearCacheBtn.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to clear the cache? This cannot be undone.')) return;
+            if (!confirm('Are you sure you want to clear the cache?')) return;
             loadingDiv.style.display = 'block';
             try {
                 await makeApiRequest('/clear-cache', 'POST', {});
@@ -713,7 +532,7 @@
             reportContent.style.display = 'none';
             editReportBtn.classList.add('hidden');
             saveChangesBtn.classList.remove('hidden');
-            cancelBtn.classList.add('hidden');
+            cancelBtn.classList.remove('hidden');
         });
 
         // Handle Correct Data button click
@@ -748,7 +567,7 @@
                 reportContent.innerHTML = marked.parse(originalReport, {
                     gfm: true,
                     breaks: true,
-                    tables: true,
+                    tables: true
                 });
                 reportContent.style.display = 'block';
                 reportEditor.style.display = 'none';
@@ -759,33 +578,13 @@
                 saveChangesBtn.classList.add('hidden');
                 cancelBtn.classList.add('hidden');
             } catch (error) {
-                // Handle by makeApiRequest
+                // Handled by makeApiRequest
             }
         });
 
-        // Handle Download as PDF button click
+        // Handle Download as PDF (Placeholder)
         downloadPdfBtn.addEventListener('click', () => {
-            alert('PDF download functionality will be implemented in the next version.');
-        });
-
-        // Add drag and drop functionality for folder path
-        folderPathInput.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            folderPathInput.classList.add('border-blue-500', 'bg-blue-50');
-        });
-
-        folderPathInput.addEventListener('dragleave', () => {
-            folderPathInput.classList.remove('border-blue-500', 'bg-blue-50');
-        });
-
-        folderPathInput.addEventListener('drop', (e) => {
-            e.preventDefault();
-            folderPathInput.classList.remove('border-blue-500', 'bg-blue-50');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                // In a real app, you would handle the file paths here
-                folderPathInput.value = files[0].path || 'Multiple files selected';
-            }
+            alert('PDF download functionality requires a backend endpoint or client-side PDF library.');
         });
     </script>
 </body>
