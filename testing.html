@@ -332,44 +332,6 @@
                 .replace(/\r\n/g, '\n') // Normalize line endings
                 .trim();
 
-            // Process tables before markdown conversion
-            const lines = cleaned.split('\n');
-            let processedLines = [];
-            let inTable = false;
-            let tableBuffer = [];
-
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                
-                // Check if we're in a table
-                if (line.includes('|')) {
-                    if (!inTable) {
-                        inTable = true;
-                        tableBuffer = [];
-                    }
-                    tableBuffer.push(lines[i]);
-                } else if (inTable) {
-                    // Process the collected table
-                    if (tableBuffer.length > 0) {
-                        const processedTable = processTable(tableBuffer);
-                        processedLines.push(...processedTable);
-                        tableBuffer = [];
-                    }
-                    inTable = false;
-                    processedLines.push(lines[i]);
-                } else {
-                    processedLines.push(lines[i]);
-                }
-            }
-
-            // Process any remaining table
-            if (tableBuffer.length > 0) {
-                const processedTable = processTable(tableBuffer);
-                processedLines.push(...processedTable);
-            }
-
-            cleaned = processedLines.join('\n');
-
             // Configure marked options
             marked.setOptions({
                 gfm: true,
@@ -382,48 +344,58 @@
                 xhtml: false
             });
 
-            // Process the markdown
+            // First convert markdown to HTML
             let html = marked.parse(cleaned);
 
-            // Add Bootstrap table classes
-            html = html
-                .replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered table-striped">')
-                .replace(/<\/table>/g, '</table></div>');
+            // Create a temporary div to manipulate the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
 
-            return html;
-        }
-
-        function processTable(tableLines) {
-            if (tableLines.length < 2) return tableLines;
-
-            const processedLines = [];
-            const headerLine = tableLines[0];
-            const separatorLine = tableLines[1];
-            processedLines.push(headerLine);
-            processedLines.push(separatorLine);
-
-            // Process data rows
-            for (let i = 2; i < tableLines.length; i++) {
-                const cells = tableLines[i].split('|').map(cell => cell.trim());
-                const processedCells = cells.map(cell => {
+            // Process tables
+            const tables = tempDiv.getElementsByTagName('table');
+            for (let table of tables) {
+                // Add Bootstrap classes to table
+                table.classList.add('table', 'table-bordered', 'table-striped');
+                
+                // Process each cell in the table
+                const cells = table.getElementsByTagName('td');
+                for (let cell of cells) {
+                    const text = cell.textContent.trim();
+                    
                     // Process status indicators
-                    if (cell.includes('RISK') || cell.includes('ON TRACK')) {
-                        const statusClass = cell.includes('ON TRACK') ? 'status-low' :
-                                          cell.includes('MEDIUM RISK') ? 'status-medium' : 'status-high';
-                        return `**<span class="${statusClass}">${cell}</span>**`;
+                    if (text.includes('RISK') || text.includes('ON TRACK')) {
+                        const statusClass = text.includes('ON TRACK') ? 'status-low' :
+                                          text.includes('MEDIUM RISK') ? 'status-medium' : 'status-high';
+                        cell.innerHTML = `<span class="${statusClass}">${text}</span>`;
                     }
                     // Process trend indicators
-                    if (cell.includes('↑') || cell.includes('↓') || cell.includes('→')) {
-                        const trendClass = cell.includes('↑') ? 'trend-up' :
-                                         cell.includes('↓') ? 'trend-down' : 'trend-neutral';
-                        return `**<span class="${trendClass}">${cell}</span>**`;
+                    else if (text.includes('↑') || text.includes('↓') || text.includes('→')) {
+                        const trendClass = text.includes('↑') ? 'trend-up' :
+                                         text.includes('↓') ? 'trend-down' : 'trend-neutral';
+                        cell.innerHTML = `<span class="${trendClass}">${text}</span>`;
                     }
-                    return cell;
-                });
-                processedLines.push('|' + processedCells.join('|') + '|');
+                }
             }
 
-            return processedLines;
+            // Wrap tables in responsive div
+            const tableResponsiveDivs = tempDiv.getElementsByTagName('table');
+            for (let table of tableResponsiveDivs) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-responsive';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            }
+
+            // Process headings
+            const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            for (let heading of headings) {
+                heading.classList.add('mb-3');
+            }
+
+            // Get the final HTML
+            html = tempDiv.innerHTML;
+
+            return html;
         }
 
         // The htmlToMarkdown function as provided in the previous full file
