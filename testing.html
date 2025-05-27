@@ -332,6 +332,44 @@
                 .replace(/\r\n/g, '\n') // Normalize line endings
                 .trim();
 
+            // Process tables before markdown conversion
+            const lines = cleaned.split('\n');
+            let processedLines = [];
+            let inTable = false;
+            let tableBuffer = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // Check if we're in a table
+                if (line.includes('|')) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableBuffer = [];
+                    }
+                    tableBuffer.push(lines[i]);
+                } else if (inTable) {
+                    // Process the collected table
+                    if (tableBuffer.length > 0) {
+                        const processedTable = processTable(tableBuffer);
+                        processedLines.push(...processedTable);
+                        tableBuffer = [];
+                    }
+                    inTable = false;
+                    processedLines.push(lines[i]);
+                } else {
+                    processedLines.push(lines[i]);
+                }
+            }
+
+            // Process any remaining table
+            if (tableBuffer.length > 0) {
+                const processedTable = processTable(tableBuffer);
+                processedLines.push(...processedTable);
+            }
+
+            cleaned = processedLines.join('\n');
+
             // Configure marked options
             marked.setOptions({
                 gfm: true,
@@ -341,41 +379,51 @@
                 sanitize: false,
                 smartLists: true,
                 smartypants: true,
-                xhtml: false,
-                tables: true
+                xhtml: false
             });
 
             // Process the markdown
             let html = marked.parse(cleaned);
 
-            // Apply custom styling for status and trend indicators
-            html = html
-                .replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>')
-                .replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>')
-                .replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>')
-                .replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>')
-                .replace(/<strong>RISK<\/strong>/g, '<span class="status-high">RISK</span>')
-                .replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>')
-                .replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>')
-                .replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
-
-            // Enhance tables with Bootstrap classes and proper styling
+            // Add Bootstrap table classes
             html = html
                 .replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered table-striped">')
-                .replace(/<\/table>/g, '</table></div>')
-                // Add specific styling for table cells containing status and trend indicators
-                .replace(/<td>([^<]*)(RISK|ON TRACK|MEDIUM RISK)([^<]*)<\/td>/g, 
-                    '<td>$1<span class="status-' + 
-                    (RegExp.$2 === 'ON TRACK' ? 'low' : 
-                     RegExp.$2 === 'MEDIUM RISK' ? 'medium' : 'high') + 
-                    '">$2</span>$3</td>')
-                .replace(/<td>([^<]*)(↑|↓|→)([^<]*)<\/td>/g, 
-                    '<td>$1<span class="trend-' + 
-                    (RegExp.$2 === '↑' ? 'up' : 
-                     RegExp.$2 === '↓' ? 'down' : 'neutral') + 
-                    '">$2$3</span></td>');
+                .replace(/<\/table>/g, '</table></div>');
 
             return html;
+        }
+
+        function processTable(tableLines) {
+            if (tableLines.length < 2) return tableLines;
+
+            const processedLines = [];
+            const headerLine = tableLines[0];
+            const separatorLine = tableLines[1];
+            processedLines.push(headerLine);
+            processedLines.push(separatorLine);
+
+            // Process data rows
+            for (let i = 2; i < tableLines.length; i++) {
+                const cells = tableLines[i].split('|').map(cell => cell.trim());
+                const processedCells = cells.map(cell => {
+                    // Process status indicators
+                    if (cell.includes('RISK') || cell.includes('ON TRACK')) {
+                        const statusClass = cell.includes('ON TRACK') ? 'status-low' :
+                                          cell.includes('MEDIUM RISK') ? 'status-medium' : 'status-high';
+                        return `**<span class="${statusClass}">${cell}</span>**`;
+                    }
+                    // Process trend indicators
+                    if (cell.includes('↑') || cell.includes('↓') || cell.includes('→')) {
+                        const trendClass = cell.includes('↑') ? 'trend-up' :
+                                         cell.includes('↓') ? 'trend-down' : 'trend-neutral';
+                        return `**<span class="${trendClass}">${cell}</span>**`;
+                    }
+                    return cell;
+                });
+                processedLines.push('|' + processedCells.join('|') + '|');
+            }
+
+            return processedLines;
         }
 
         // The htmlToMarkdown function as provided in the previous full file
