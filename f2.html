@@ -310,42 +310,40 @@
     <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script>
         function processMarkdownContent(content) {
-        if (typeof content !== 'string') {
-            console.error('processMarkdownContent: Input is not a string:', content);
-            return '<p>Error: Invalid report content</p>';
-        }
-        let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
-    
-        // --- PRE-PROCESSING FOR HEADINGS (INCLUDING ALL SUBHEADINGS H1-H6) ---
-        // This regex matches a character that is NOT a newline, followed by a heading marker (#, ##, ### etc.) and a space.
-        // It inserts two newlines before the heading marker to ensure proper block separation for Marked.js.
-        cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
-        // --- END PRE-PROCESSING ---
-    
-        // --- PRE-PROCESSING FOR TABLES ---
-        // This regex looks for a pattern that resembles a table header followed by a separator line,
-        // ensuring there are two newlines before it if not already present.
-        // This helps Marked.js correctly identify the start of a table.
-        cleaned = cleaned.replace(/([^\n])\n(\|.+\|)\n(\|[\s\-:]+\|\n)/g, '$1\n\n$2\n$3');
-        // Ensure two newlines before any table header if it's not already preceded by a blank line
-        // This targets lines starting with '|' that look like a table header or separator,
-        // and are directly preceded by non-whitespace content on the previous line.
-        cleaned = cleaned.replace(/(\S)\n\s*\|/g, '$1\n\n|');
-        // --- END PRE-PROCESSING FOR TABLES ---
-    
-        let html = marked.parse(cleaned);
-        html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
-        html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
-        html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
-        html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
-        html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
-        html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
-        html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
-        // These lines already apply Bootstrap classes to tables that are correctly parsed by Marked.js
-        html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
-        html = html.replace(/<\/table>/g, '</table></div>');
-        return html;
+    if (typeof content !== 'string') {
+        console.error('processMarkdownContent: Input is not a string:', content);
+        return '<p>Error: Invalid report content</p>';
     }
+    let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
+
+    // Ensure two newlines before headings (already good)
+    cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
+
+    // --- ENHANCED PRE-PROCESSING FOR TABLES ---
+    // This step aims to ensure that any line starting with a '|' (which signifies a table row)
+    // is preceded by at least two newlines, if it's not already.
+    // It targets cases where a table might be directly after a paragraph or another element.
+    cleaned = cleaned.replace(/(\S)\n\s*(\|)/g, '$1\n\n$2');
+
+    // Also, ensure a blank line after a table if it's immediately followed by other content.
+    // This helps isolate the table block.
+    // This regex looks for a table-like line (ending with a pipe, potentially followed by spaces and a newline)
+    // and then non-whitespace character on the next line.
+    cleaned = cleaned.replace(/(\|\s*\n)(\S)/g, '$1\n$2');
+    // --- END ENHANCED PRE-PROCESSING FOR TABLES ---
+
+    let html = marked.parse(cleaned);
+    html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
+    html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
+    html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
+    html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
+    html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
+    html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
+    html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
+    html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
+    html = html.replace(/<\/table>/g, '</table></div>');
+    return html;
+}
         function htmlToMarkdown(htmlContent) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(`<div>${htmlContent}</div>`, 'text/html');
