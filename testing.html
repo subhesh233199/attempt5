@@ -319,13 +319,17 @@
         }
 
         function processMarkdownContent(content) {
+            console.log('processMarkdownContent called with:', content);
+            
             if (typeof content !== 'string') {
                 console.error('processMarkdownContent: Input is not a string:', content);
                 return '<p>Error: Invalid report content</p>';
             }
 
             // Just convert markdown to HTML, nothing else
-            return marked.parse(content);
+            const html = marked.parse(content);
+            console.log('Marked.js output:', html);
+            return html;
         }
 
         // The htmlToMarkdown function as provided in the previous full file
@@ -435,10 +439,20 @@
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
 
+                console.log('Server response:', response.data);
                 const reportMarkdownFromServer = response.data.report;
-                // If you are using the preProcessTables for custom table rendering, keep this line:
-                const markdownWithHtmlTables = preProcessTables(reportMarkdownFromServer);
-                const finalProcessedHtmlReport = processMarkdownContent(markdownWithHtmlTables);
+                console.log('Markdown from server:', reportMarkdownFromServer);
+
+                // Test with a simple markdown string first
+                const testMarkdown = "# Test Heading\n\n## Test Subheading\n\n| Test | Table |\n|------|-------|\n| Cell | Cell |";
+                console.log('Test markdown:', testMarkdown);
+                const testHtml = processMarkdownContent(testMarkdown);
+                console.log('Test HTML output:', testHtml);
+                document.getElementById('reportContent').innerHTML = testHtml;
+
+                // If test works, try the actual content
+                const finalProcessedHtmlReport = processMarkdownContent(reportMarkdownFromServer);
+                console.log('Final HTML output:', finalProcessedHtmlReport);
                 document.getElementById('reportContent').innerHTML = finalProcessedHtmlReport;
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
