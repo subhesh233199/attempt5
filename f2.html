@@ -95,12 +95,6 @@
             margin-top: 1.5em;
         }
        
-        .markdown-container h3 {
-            color: var(--secondary-color);
-            font-size: 1.25em;
-            margin-top: 1.25em;
-        }
-       
         .markdown-container table {
             border-collapse: collapse;
             width: 100%;
@@ -123,23 +117,6 @@
        
         .markdown-container table tr:nth-child(even) {
             background-color: #f6f8fa;
-        }
-
-        .markdown-container ul,
-        .markdown-container ol {
-            padding-left: 2em;
-            margin: 1em 0;
-        }
-
-        .markdown-container li {
-            margin-bottom: 0.5em;
-        }
-
-        .markdown-container hr {
-            border: 0;
-            height: 1px;
-            background-color: #e1e4e8;
-            margin: 2em 0;
         }
 
         .status-high,
@@ -332,48 +309,63 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script>
-        // Configure marked.js with proper options
-        marked.setOptions({
-            gfm: true,
-            breaks: true,
-            pedantic: false,
-            smartLists: true,
-            smartypants: true,
-            xhtml: true
-        });
+        // Placeholder for preProcessTables from previous versions, or you can integrate it
+        // if you intend to use custom table parsing alongside heading preprocessing.
+        // For this specific request, we are focusing on the processMarkdownContent function.
+        function preProcessTables(markdown) {
+            // This function would contain the table parsing logic from the previous solution.
+            // For this specific request, it's a placeholder.
+            return markdown; 
+        }
 
         function processMarkdownContent(content) {
-    if (typeof content !== 'string') {
-        console.error('Invalid markdown content');
-        return '<p>Error: Invalid report content</p>';
-    }
+            if (typeof content !== 'string') {
+                console.error('processMarkdownContent: Input is not a string:', content);
+                return '<p>Error: Invalid report content</p>';
+            }
+            let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
+            
+            // --- PRE-PROCESSING FOR HEADINGS (INCLUDING ALL SUBHEADINGS H1-H6) ---
+            // This regex matches a character that is NOT a newline, followed by a heading marker (#, ##, ### etc.) and a space.
+            // It inserts two newlines before the heading marker to ensure proper block separation for Marked.js.
+            // This helps ensure headings are correctly parsed even if they immediately follow other content.
+            cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
+            // --- END PRE-PROCESSING ---
 
-    // Clean up code block markers
-    let cleaned = content.replace(/```markdown\s*/g, '').replace(/```/g, '');
+            // --- PRE-PROCESSING FOR LISTS TO NORMALIZE INDENTATION (from previous iteration) ---
+            // Replace non-breaking spaces (U+00A0) with regular spaces (U+0020) FIRST
+            cleaned = cleaned.replace(/\u00A0/g, ' ');
 
-    // Ensure proper spacing before headings and lists
-    cleaned = cleaned.replace(/([^\n])\n(#+ )/g, '$1\n\n$2');
-    cleaned = cleaned.replace(/([^\n])\n(- |\d+\. )/g, '$1\n\n$2');
-    cleaned = cleaned.replace(/\n-{3,}\n/g, '\n\n---\n\n');
+            // This regex looks for lines that start with a number followed by a dot and a space (list item)
+            // and then subsequent lines that are indented with more than 4 spaces or a mix of spaces/tabs.
+            // It aims to normalize indentation to a consistent 4 spaces for continuation lines.
+            cleaned = cleaned.replace(/^(\d+\.\s+.*)\n(\s{4,}|[\t]+)(.+)$/gm, (match, listItemStart, indent, continuationText) => {
+                return `${listItemStart}\n    ${continuationText.trim()}`;
+            });
+            // This also handles cases where a line just has a few spaces then content, ensuring it's part of the prev line
+            cleaned = cleaned.replace(/^(\s*[*-]?\s*.*[^\n])\n(\s{1,3}[^\s*-])/gm, (match, previousLine, currentLineStart) => {
+                return `${previousLine.trim()} ${currentLineStart.trim()}`;
+            });
+            // --- END PRE-PROCESSING FOR LISTS ---
 
-    // Parse with marked.js
-    let html = marked.parse(cleaned);
 
-    // Style enhancements: replace bolded risk/status terms with span classes
-    html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
-    html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
-    html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
-    html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
-    html = html.replace(/<strong>\(↑ ([^)]+)\)<\/strong>/g, '<span class="trend-up">↑ ($1)</span>');
-    html = html.replace(/<strong>\(↓ ([^)]+)\)<\/strong>/g, '<span class="trend-down">↓ ($1)</span>');
-    html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
+            let html = marked.parse(cleaned);
+            html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
+            html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
+            html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
+            html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
+            html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
+            html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
+            html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
+            // These lines already apply Bootstrap classes to tables that are correctly parsed by Marked.js
+            // If you are using preProcessTables, these lines might need to be removed or adjusted to avoid duplication
+            // as preProcessTables already generates the correct HTML for tables.
+            html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
+            html = html.replace(/<\/table>/g, '</table></div>');
+            return html;
+        }
 
-    // Make tables responsive and styled
-    html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
-    html = html.replace(/<\/table>/g, '</table></div>');
-
-    return html;
-}
+        // The htmlToMarkdown function as provided in the previous full file
         function htmlToMarkdown(htmlContent) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(`<div>${htmlContent}</div>`, 'text/html');
@@ -388,41 +380,57 @@
 
                 let result = '';
                 const tagName = node.tagName.toLowerCase();
-                const childrenMarkdown = Array.from(node.childNodes).map(processNode).filter(Boolean).join('\n');
+                let childrenMarkdown = '';
+                if (node.childNodes.length > 0) {
+                     childrenMarkdown = Array.from(node.childNodes).map(processNode).filter(Boolean).join('');
+                }
 
                 if (tagName === 'h1') {
-                    result = `# ${childrenMarkdown}\n`;
+                    result = `# ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'h2') {
-                    result = `## ${childrenMarkdown}\n`;
+                    result = `## ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'h3') {
-                    result = `### ${childrenMarkdown}\n`;
+                    result = `### ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'p') {
-                    result = `${childrenMarkdown}\n`;
-                } else if (tagName === 'table') {
-                    const rows = Array.from(node.querySelectorAll('tr'));
-                    if (rows.length === 0) return '';
-                    const headers = Array.from(rows[0].querySelectorAll('th, td')).map(cell => cell.textContent.trim());
-                    const separator = headers.map(() => '---');
-                    const bodyRows = rows.slice(1).map(row => 
-                        Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()).join(' | ')
-                    );
-                    result = `| ${headers.join(' | ')} |\n| ${separator.join(' | ')} |\n${bodyRows.map(row => `| ${row} |`).join('\n')}\n`;
+                    result = `${childrenMarkdown}\n\n`;
+                } else if (tagName === 'div' && node.className.includes('table-responsive')) {
+                    const table = node.querySelector('table');
+                    if (table) {
+                        const rows = Array.from(table.querySelectorAll('tr'));
+                        if (rows.length === 0) return '';
+                        
+                        const headers = Array.from(rows[0].querySelectorAll('th, td')).map(cell => cell.textContent.trim());
+                        const separator = headers.map(() => '---').join(' | ');
+                        
+                        let tableMarkdown = `| ${headers.join(' | ')} |\n| ${separator} |\n`;
+                        
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            const cells = Array.from(row.querySelectorAll('td')).map(cell => {
+                                const span = cell.querySelector('span');
+                                return span ? span.textContent.trim() : cell.textContent.trim();
+                            });
+                            tableMarkdown += `| ${cells.join(' | ')} |\n`;
+                        }
+                        result = `\n${tableMarkdown}\n`;
+                    }
                 } else if (tagName === 'span') {
                     const className = node.className;
                     if (className.includes('status-') || className.includes('trend-')) {
-                        result = `**${childrenMarkdown}**`;
+                        if (childrenMarkdown.includes('HIGH RISK') || childrenMarkdown.includes('MEDIUM RISK') || childrenMarkdown.includes('LOW RISK') || childrenMarkdown.includes('ON TRACK')) {
+                             result = `**${childrenMarkdown.replace(/<[^>]*>/g, '')}**`;
+                        } else if (childrenMarkdown.includes('↑') || childrenMarkdown.includes('↓') || childrenMarkdown.includes('→')) {
+                             result = `**${childrenMarkdown.replace(/<[^>]*>/g, '')}**`;
+                        } else {
+                            result = childrenMarkdown;
+                        }
                     } else {
                         result = childrenMarkdown;
                     }
-                } else if (tagName === 'div' && node.className.includes('table-responsive')) {
-                    result = processNode(node.querySelector('table') || node);
-                } else if (tagName === 'ul' || tagName === 'ol') {
-                    const listItems = Array.from(node.querySelectorAll('li')).map(li => {
-                        const itemContent = processNode(li).trim();
-                        return tagName === 'ul' ? `- ${itemContent}` : `1. ${itemContent}`;
-                    }).join('\n');
-                    result = `${listItems}\n`;
-                } else {
+                } else if (tagName === 'strong') {
+                    result = `**${childrenMarkdown}**`;
+                }
+                else {
                     result = childrenMarkdown;
                 }
 
@@ -430,6 +438,7 @@
             }
 
             markdown = processNode(root).trim();
+            markdown = markdown.replace(/\n{3,}/g, '\n\n');
             return markdown;
         }
 
@@ -463,10 +472,11 @@
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
 
-                // Directly process and display the report content from the backend
                 const reportMarkdownFromServer = response.data.report;
-                const processedHtmlReport = processMarkdownContent(reportMarkdownFromServer);
-                document.getElementById('reportContent').innerHTML = processedHtmlReport;
+                // If you are using the preProcessTables for custom table rendering, keep this line:
+                const markdownWithHtmlTables = preProcessTables(reportMarkdownFromServer);
+                const finalProcessedHtmlReport = processMarkdownContent(markdownWithHtmlTables);
+                document.getElementById('reportContent').innerHTML = finalProcessedHtmlReport;
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
                     `<div class="col-md-6 mb-4">
@@ -520,13 +530,15 @@
 
         saveBtn.addEventListener('click', () => {
             const editedHtml = reportContentDiv.innerHTML;
-            const markdownContent = htmlToMarkdown(editedHtml);
+            const markdownContent = htmlToMarkdown(editedHtml); // Convert edited HTML back to Markdown
             const validation = validateMarkdownContent(markdownContent);
             if (!validation.isValid) {
                 alert(`Invalid report structure. Missing sections: ${validation.missingSections.join(', ')}. Please ensure all required sections are present.`);
                 return;
             }
-            const reprocessedContent = processMarkdownContent(markdownContent);
+            // If you are using preProcessTables, keep this line:
+            const markdownWithHtmlTables = preProcessTables(markdownContent);
+            const reprocessedContent = processMarkdownContent(markdownWithHtmlTables); // Then process other markdown
             reportContentDiv.innerHTML = reprocessedContent;
             reportContentDiv.contentEditable = false;
             editBtn.style.display = 'inline-block';
