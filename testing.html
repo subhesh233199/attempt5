@@ -324,78 +324,8 @@
                 return '<p>Error: Invalid report content</p>';
             }
 
-            // Basic cleaning
-            let cleaned = content
-                .replace(/```markdown/g, '')
-                .replace(/```/g, '')
-                .replace(/\u00A0/g, ' ') // Replace non-breaking spaces
-                .replace(/\r\n/g, '\n') // Normalize line endings
-                .trim();
-
-            // Configure marked options
-            marked.setOptions({
-                gfm: true,
-                breaks: true,
-                headerIds: true,
-                mangle: false,
-                sanitize: false,
-                smartLists: true,
-                smartypants: true,
-                xhtml: false
-            });
-
-            // First convert markdown to HTML
-            let html = marked.parse(cleaned);
-
-            // Create a temporary div to manipulate the HTML
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-
-            // Process tables
-            const tables = tempDiv.getElementsByTagName('table');
-            for (let table of tables) {
-                // Add Bootstrap classes to table
-                table.classList.add('table', 'table-bordered', 'table-striped');
-                
-                // Process each cell in the table
-                const cells = table.getElementsByTagName('td');
-                for (let cell of cells) {
-                    const text = cell.textContent.trim();
-                    
-                    // Process status indicators
-                    if (text.includes('RISK') || text.includes('ON TRACK')) {
-                        const statusClass = text.includes('ON TRACK') ? 'status-low' :
-                                          text.includes('MEDIUM RISK') ? 'status-medium' : 'status-high';
-                        cell.innerHTML = `<span class="${statusClass}">${text}</span>`;
-                    }
-                    // Process trend indicators
-                    else if (text.includes('↑') || text.includes('↓') || text.includes('→')) {
-                        const trendClass = text.includes('↑') ? 'trend-up' :
-                                         text.includes('↓') ? 'trend-down' : 'trend-neutral';
-                        cell.innerHTML = `<span class="${trendClass}">${text}</span>`;
-                    }
-                }
-            }
-
-            // Wrap tables in responsive div
-            const tableResponsiveDivs = tempDiv.getElementsByTagName('table');
-            for (let table of tableResponsiveDivs) {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'table-responsive';
-                table.parentNode.insertBefore(wrapper, table);
-                wrapper.appendChild(table);
-            }
-
-            // Process headings
-            const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
-            for (let heading of headings) {
-                heading.classList.add('mb-3');
-            }
-
-            // Get the final HTML
-            html = tempDiv.innerHTML;
-
-            return html;
+            // Just convert markdown to HTML, nothing else
+            return marked.parse(content);
         }
 
         // The htmlToMarkdown function as provided in the previous full file
