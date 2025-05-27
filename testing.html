@@ -332,29 +332,8 @@
                 .replace(/\r\n/g, '\n') // Normalize line endings
                 .trim();
 
-            // Process headings with proper hierarchy
-            const lines = cleaned.split('\n');
-            let processedLines = [];
-            
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i];
-                const trimmedLine = line.trim();
-                
-                // Check if line is a heading
-                if (trimmedLine.startsWith('#')) {
-                    // Add blank line before heading (except for first heading)
-                    if (i > 0) {
-                        processedLines.push('');
-                    }
-                    processedLines.push(line);
-                    // Add blank line after heading
-                    processedLines.push('');
-                } else {
-                    processedLines.push(line);
-                }
-            }
-            
-            cleaned = processedLines.join('\n');
+            // Simple heading spacing - this was working before
+            cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
 
             // Configure marked options
             marked.setOptions({
