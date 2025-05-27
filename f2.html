@@ -455,8 +455,7 @@
         const editBtn = document.getElementById('editReportBtn');
         const saveBtn = document.getElementById('saveReportBtn');
         const cancelBtn = document.getElementById('cancelEditBtn');
-        let originalContent = '';
-        // originalMarkdown is no longer needed since we are not using localStorage
+        let originalContent = ''; // Stores the HTML content before editing
 
         editBtn.addEventListener('click', () => {
             originalContent = reportContentDiv.innerHTML; // Store current displayed HTML
@@ -475,7 +474,7 @@
                 alert(`Invalid report structure. Missing sections: ${validation.missingSections.join(', ')}. Please ensure all required sections are present.`);
                 return;
             }
-            // Removed: localStorage.setItem('savedReportContent', markdownContent);
+            // No longer saving to local storage
             const reprocessedContent = processMarkdownContent(markdownContent);
             reportContentDiv.innerHTML = reprocessedContent;
             reportContentDiv.contentEditable = false;
@@ -486,7 +485,7 @@
 
         cancelBtn.addEventListener('click', () => {
             reportContentDiv.innerHTML = originalContent; // Revert to the HTML before editing
-            // Removed: localStorage.setItem('savedReportContent', originalMarkdown);
+            // No longer restoring from local storage
             reportContentDiv.contentEditable = false;
             editBtn.style.display = 'inline-block';
             saveBtn.style.display = 'none';
