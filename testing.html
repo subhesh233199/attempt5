@@ -439,21 +439,9 @@
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
 
-                console.log('Server response:', response.data);
-                const reportMarkdownFromServer = response.data.report;
-                console.log('Markdown from server:', reportMarkdownFromServer);
-
-                // Test with a simple markdown string first
-                const testMarkdown = "# Test Heading\n\n## Test Subheading\n\n| Test | Table |\n|------|-------|\n| Cell | Cell |";
-                console.log('Test markdown:', testMarkdown);
-                const testHtml = processMarkdownContent(testMarkdown);
-                console.log('Test HTML output:', testHtml);
-                document.getElementById('reportContent').innerHTML = testHtml;
-
-                // If test works, try the actual content
-                const finalProcessedHtmlReport = processMarkdownContent(reportMarkdownFromServer);
-                console.log('Final HTML output:', finalProcessedHtmlReport);
-                document.getElementById('reportContent').innerHTML = finalProcessedHtmlReport;
+                // Direct conversion like markdowntohtml.com
+                const html = marked.parse(response.data.report);
+                document.getElementById('reportContent').innerHTML = html;
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
                     `<div class="col-md-6 mb-4">
