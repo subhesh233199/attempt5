@@ -95,12 +95,6 @@
             margin-top: 1.5em;
         }
        
-        .markdown-container h3 {
-            color: var(--secondary-color);
-            font-size: 1.3em;
-            margin-top: 1.3em;
-        }
-       
         .markdown-container table {
             border-collapse: collapse;
             width: 100%;
@@ -123,16 +117,6 @@
        
         .markdown-container table tr:nth-child(even) {
             background-color: #f6f8fa;
-        }
-
-        .markdown-container ul,
-        .markdown-container ol {
-            padding-left: 2em;
-            margin: 1em 0;
-        }
-
-        .markdown-container li {
-            margin-bottom: 0.5em;
         }
 
         .status-high,
@@ -325,72 +309,103 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script>
-        // Configure marked.js with proper settings
-        marked.setOptions({
-            gfm: true,
-            breaks: false,
-            pedantic: false,
-            smartLists: true,
-            smartypants: false
-        });
-
-        function processMarkdownContent(content) {
-            if (typeof content !== 'string') {
-                console.error('processMarkdownContent: Input is not a string:', content);
-                return '<p>Error: Invalid report content</p>';
-            }
-
-            try {
-                // Step 1: Remove code block markers if present
-                let cleaned = content.replace(/^```markdown/gm, '').replace(/```$/gm, '').trim();
-
-                // Step 2: Ensure proper spacing for headings (h1-h6)
-                cleaned = cleaned.replace(/(^|\n)(#+)(?!#)([^\n]+)/g, function(match, p1, p2, p3) {
-                    return '\n\n' + p2 + p3 + '\n';
-                });
-
-                // Step 3: Ensure proper spacing for lists
-                cleaned = cleaned.replace(/(^|\n)(\s*[-*+]|\s*\d+\.)\s+/gm, '\n$2 ');
-
-                // Step 4: Ensure proper table formatting
-                cleaned = cleaned.replace(/(\|[^\n]+\|\s*\n)(\|[\s-:]+\|)/g, function(match, header, divider) {
-                    return header + divider.replace(/\|/g, '|').replace(/-+/g, '---') + '\n';
-                });
-
-                // Step 5: Handle table alignment markers
-                cleaned = cleaned.replace(/\| *:--+ *\|/g, '|:---|')
-                               .replace(/\| *--+: *\|/g, '|---:|')
-                               .replace(/\| *:-+: *\|/g, '|:---:|');
-
-                // Step 6: Ensure proper spacing between paragraphs
-                cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-
-                // Step 7: Trim any leading/trailing whitespace
-                cleaned = cleaned.trim();
-
-                // Parse with marked.js
-                let html = marked.parse(cleaned);
-
-                // Post-processing for styling
-                html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
-                html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
-                html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
-                html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
-                html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
-                html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
-                html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
-                
-                // Table formatting with Bootstrap
-                html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered table-striped">');
-                html = html.replace(/<\/table>/g, '</table></div>');
-
-                return html;
-            } catch (e) {
-                console.error('Markdown processing error:', e);
-                return `<div class="error">Error processing markdown content: ${e.message}</div>`;
-            }
+        // Placeholder for preProcessTables from previous versions, or you can integrate it
+        // if you intend to use custom table parsing alongside heading preprocessing.
+        // For this specific request, we are focusing on the processMarkdownContent function.
+        function preProcessTables(markdown) {
+            // This function would contain the table parsing logic from the previous solution.
+            // For this specific request, it's a placeholder.
+            return markdown; 
         }
 
+        function processMarkdownContent(content) {
+    if (typeof content !== 'string') {
+        console.error('processMarkdownContent: Input is not a string:', content);
+        return '<p>Error: Invalid report content</p>';
+    }
+    let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
+
+    // --- AGGRESSIVE INITIAL CLEANING ---
+    // Normalize all line endings to LF (\n)
+    cleaned = cleaned.replace(/\r\n|\r/g, '\n');
+    // Replace all non-breaking spaces (U+00A0) with standard spaces (U+0020)
+    cleaned = cleaned.replace(/\u00A0/g, ' ');
+    // Remove other common problematic invisible characters (e.g., Zero Width No-Break Space U+FEFF, etc.)
+    cleaned = cleaned.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, ''); 
+    // --- END AGGRESSIVE INITIAL CLEANING ---
+    
+    // --- ENHANCED PRE-PROCESSING FOR HEADINGS ---
+    // Ensure any line starting with # is preceded by at least two newlines.
+    // This makes sure marked.js sees it as a new block.
+    // This is more robust than just checking for a preceding non-newline character.
+    cleaned = cleaned.replace(/^(\s*#+.*)$/gm, '\n\n$1');
+    // Also, remove any leading blank lines that might be added by the above if at the very start
+    cleaned = cleaned.replace(/^\n+/, '');
+    // --- END ENHANCED PRE-PROCESSING FOR HEADINGS ---
+
+    // --- REVISED PRE-PROCESSING FOR NUMBERED LISTS ---
+    const lines = cleaned.split('\n');
+    let reformattedLines = [];
+    let inNumberedListItem = false;
+    let currentListItemContent = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmedLine = line.trim();
+
+        const listItemMatch = line.match(/^(\d+\.\s+)(.+)$/);
+
+        if (listItemMatch) {
+            if (inNumberedListItem) {
+                reformattedLines.push(currentListItemContent.join('\n'));
+            }
+            inNumberedListItem = true;
+            currentListItemContent = [`${listItemMatch[1]}${listItemMatch[2].trim()}`];
+        } else if (inNumberedListItem && (line.startsWith(' ') || line.startsWith('\t') || trimmedLine === '')) {
+            if (trimmedLine === '') {
+                currentListItemContent.push('');
+            } else {
+                currentListItemContent.push('    ' + trimmedLine);
+            }
+        } else {
+            if (inNumberedListItem) {
+                reformattedLines.push(currentListItemContent.join('\n'));
+                inNumberedListItem = false;
+                currentListItemContent = [];
+            }
+            reformattedLines.push(line);
+        }
+    }
+
+    if (inNumberedListItem) {
+        reformattedLines.push(currentListItemContent.join('\n'));
+    }
+
+    cleaned = reformattedLines.join('\n');
+    // Ensure blank lines after lists for proper block separation if a list is immediately followed by other content.
+    cleaned = cleaned.replace(/^((\d+\.\s+.*?\n)(?:\s+.*?\n)*)(\S)/gm, '$1\n$4');
+    // --- END REVISED PRE-PROCESSING FOR NUMBERED LISTS ---
+
+    // Now, pass the cleaned markdown to marked.js
+    let html = marked.parse(cleaned);
+
+    // Apply custom status/trend spans
+    html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
+    html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
+    html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
+    html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
+    html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
+    html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
+    html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
+
+    // Add Bootstrap table classes (if tables were not pre-processed into HTML already)
+    html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
+    html = html.replace(/<\/table>/g, '</table></div>');
+
+    return html;
+}
+
+        // The htmlToMarkdown function as provided in the previous full file
         function htmlToMarkdown(htmlContent) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(`<div>${htmlContent}</div>`, 'text/html');
@@ -405,43 +420,57 @@
 
                 let result = '';
                 const tagName = node.tagName.toLowerCase();
-                const childrenMarkdown = Array.from(node.childNodes).map(processNode).filter(Boolean).join('\n');
+                let childrenMarkdown = '';
+                if (node.childNodes.length > 0) {
+                     childrenMarkdown = Array.from(node.childNodes).map(processNode).filter(Boolean).join('');
+                }
 
                 if (tagName === 'h1') {
-                    result = `# ${childrenMarkdown}\n`;
+                    result = `# ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'h2') {
-                    result = `## ${childrenMarkdown}\n`;
+                    result = `## ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'h3') {
-                    result = `### ${childrenMarkdown}\n`;
+                    result = `### ${childrenMarkdown}\n\n`;
                 } else if (tagName === 'p') {
-                    result = `${childrenMarkdown}\n`;
-                } else if (tagName === 'table') {
-                    const rows = Array.from(node.querySelectorAll('tr'));
-                    if (rows.length === 0) return '';
-                    const headers = Array.from(rows[0].querySelectorAll('th, td')).map(cell => cell.textContent.trim());
-                    const separator = headers.map(() => '---');
-                    const bodyRows = rows.slice(1).map(row => 
-                        Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()).join(' | ')
-                    );
-                    result = `| ${headers.join(' | ')} |\n| ${separator.join(' | ')} |\n${bodyRows.map(row => `| ${row} |`).join('\n')}\n`;
+                    result = `${childrenMarkdown}\n\n`;
+                } else if (tagName === 'div' && node.className.includes('table-responsive')) {
+                    const table = node.querySelector('table');
+                    if (table) {
+                        const rows = Array.from(table.querySelectorAll('tr'));
+                        if (rows.length === 0) return '';
+                        
+                        const headers = Array.from(rows[0].querySelectorAll('th, td')).map(cell => cell.textContent.trim());
+                        const separator = headers.map(() => '---').join(' | ');
+                        
+                        let tableMarkdown = `| ${headers.join(' | ')} |\n| ${separator} |\n`;
+                        
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            const cells = Array.from(row.querySelectorAll('td')).map(cell => {
+                                const span = cell.querySelector('span');
+                                return span ? span.textContent.trim() : cell.textContent.trim();
+                            });
+                            tableMarkdown += `| ${cells.join(' | ')} |\n`;
+                        }
+                        result = `\n${tableMarkdown}\n`;
+                    }
                 } else if (tagName === 'span') {
                     const className = node.className;
                     if (className.includes('status-') || className.includes('trend-')) {
-                        result = `**${childrenMarkdown}**`;
+                        if (childrenMarkdown.includes('HIGH RISK') || childrenMarkdown.includes('MEDIUM RISK') || childrenMarkdown.includes('LOW RISK') || childrenMarkdown.includes('ON TRACK')) {
+                             result = `**${childrenMarkdown.replace(/<[^>]*>/g, '')}**`;
+                        } else if (childrenMarkdown.includes('↑') || childrenMarkdown.includes('↓') || childrenMarkdown.includes('→')) {
+                             result = `**${childrenMarkdown.replace(/<[^>]*>/g, '')}**`;
+                        } else {
+                            result = childrenMarkdown;
+                        }
                     } else {
                         result = childrenMarkdown;
                     }
-                } else if (tagName === 'div' && node.className.includes('table-responsive')) {
-                    result = processNode(node.querySelector('table') || node);
-                } else if (tagName === 'ul' || tagName === 'ol') {
-                    const listItems = Array.from(node.querySelectorAll('li')).map(li => {
-                        const prefix = tagName === 'ol' ? '1. ' : '- ';
-                        return prefix + processNode(li).trim();
-                    }).join('\n');
-                    result = `${listItems}\n`;
-                } else if (tagName === 'li') {
-                    result = childrenMarkdown;
-                } else {
+                } else if (tagName === 'strong') {
+                    result = `**${childrenMarkdown}**`;
+                }
+                else {
                     result = childrenMarkdown;
                 }
 
@@ -449,6 +478,7 @@
             }
 
             markdown = processNode(root).trim();
+            markdown = markdown.replace(/\n{3,}/g, '\n\n');
             return markdown;
         }
 
@@ -482,12 +512,12 @@
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
 
-                // Process and display the report content from the backend
                 const reportMarkdownFromServer = response.data.report;
-                const processedHtmlReport = processMarkdownContent(reportMarkdownFromServer);
-                document.getElementById('reportContent').innerHTML = processedHtmlReport;
+                // If you are using the preProcessTables for custom table rendering, keep this line:
+                const markdownWithHtmlTables = preProcessTables(reportMarkdownFromServer);
+                const finalProcessedHtmlReport = processMarkdownContent(markdownWithHtmlTables);
+                document.getElementById('reportContent').innerHTML = finalProcessedHtmlReport;
 
-                // Display visualizations
                 const vizContent = response.data.visualizations.map((base64, index) => 
                     `<div class="col-md-6 mb-4">
                         <img src="data:image/png;base64,${base64}" class="visualization" alt="Visualization ${index + 1}">
@@ -495,7 +525,6 @@
                 ).join('');
                 document.getElementById('visualizationsContent').innerHTML = vizContent;
 
-                // Display evaluation
                 const evalContent = `
                     <div class="evaluation-card">
                         <h4>Analysis Quality Score</h4>
@@ -505,7 +534,6 @@
                 `;
                 document.getElementById('evaluationContent').innerHTML = evalContent;
 
-                // Display hyperlinks
                 const hyperlinksContent = response.data.hyperlinks.map(link => `
                     <div class="hyperlink-card">
                         <h6><a href="${link.url}" target="_blank" class="hyperlink-url">${link.url}</a></h6>
@@ -525,15 +553,14 @@
             }
         });
 
-        // Edit/Save/Cancel functionality
         const reportContentDiv = document.getElementById('reportContent');
         const editBtn = document.getElementById('editReportBtn');
         const saveBtn = document.getElementById('saveReportBtn');
         const cancelBtn = document.getElementById('cancelEditBtn');
-        let originalContent = '';
+        let originalContent = ''; // Stores the HTML content before editing
 
         editBtn.addEventListener('click', () => {
-            originalContent = reportContentDiv.innerHTML;
+            originalContent = reportContentDiv.innerHTML; // Store current displayed HTML
             reportContentDiv.contentEditable = true;
             reportContentDiv.focus();
             editBtn.style.display = 'none';
@@ -543,15 +570,15 @@
 
         saveBtn.addEventListener('click', () => {
             const editedHtml = reportContentDiv.innerHTML;
-            const markdownContent = htmlToMarkdown(editedHtml);
+            const markdownContent = htmlToMarkdown(editedHtml); // Convert edited HTML back to Markdown
             const validation = validateMarkdownContent(markdownContent);
-            
             if (!validation.isValid) {
                 alert(`Invalid report structure. Missing sections: ${validation.missingSections.join(', ')}. Please ensure all required sections are present.`);
                 return;
             }
-            
-            const reprocessedContent = processMarkdownContent(markdownContent);
+            // If you are using preProcessTables, keep this line:
+            const markdownWithHtmlTables = preProcessTables(markdownContent);
+            const reprocessedContent = processMarkdownContent(markdownWithHtmlTables); // Then process other markdown
             reportContentDiv.innerHTML = reprocessedContent;
             reportContentDiv.contentEditable = false;
             editBtn.style.display = 'inline-block';
@@ -560,7 +587,7 @@
         });
 
         cancelBtn.addEventListener('click', () => {
-            reportContentDiv.innerHTML = originalContent;
+            reportContentDiv.innerHTML = originalContent; // Revert to the HTML before editing
             reportContentDiv.contentEditable = false;
             editBtn.style.display = 'inline-block';
             saveBtn.style.display = 'none';
