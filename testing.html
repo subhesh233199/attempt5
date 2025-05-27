@@ -74,13 +74,19 @@
         }
 
         .markdown-container {
-            font-family: 'Courier New', Courier, monospace;
-            line-height: 1.8;
-            white-space: pre-wrap;
             background-color: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
             border: 1px solid #e0e0e0;
+            overflow-x: auto; /* Allow horizontal scrolling for wide content */
+        }
+
+        .markdown-pre {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95em;
+            line-height: 1.6;
+            white-space: pre; /* Preserve exact whitespace and line breaks */
+            margin: 0; /* Remove default margins */
         }
 
         .status-high,
@@ -238,7 +244,9 @@
                         <button id="saveReportBtn" class="btn btn-success btn-sm" style="display: none;">Save Changes</button>
                         <button id="cancelEditBtn" class="btn btn-danger btn-sm" style="display: none;">Cancel</button>
                     </div>
-                    <div id="reportContent" class="markdown-container" contenteditable="false"></div>
+                    <div id="reportContent" class="markdown-container" contenteditable="false">
+                        <pre class="markdown-pre"></pre>
+                    </div>
                 </div>
             </div>
 
@@ -312,9 +320,9 @@
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
 
-                // Display raw markdown content
+                // Display raw markdown content in the <pre> tag
                 const rawMarkdown = processMarkdownContent(response.data.report);
-                document.getElementById('reportContent').textContent = rawMarkdown;
+                document.getElementById('reportContent').querySelector('pre').textContent = rawMarkdown;
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
                     `<div class="col-md-6 mb-4">
@@ -352,37 +360,38 @@
         });
 
         const reportContentDiv = document.getElementById('reportContent');
+        const preElement = reportContentDiv.querySelector('pre');
         const editBtn = document.getElementById('editReportBtn');
         const saveBtn = document.getElementById('saveReportBtn');
         const cancelBtn = document.getElementById('cancelEditBtn');
         let originalContent = ''; // Stores the raw markdown content before editing
 
         editBtn.addEventListener('click', () => {
-            originalContent = reportContentDiv.textContent; // Store current raw markdown
-            reportContentDiv.contentEditable = true;
-            reportContentDiv.focus();
+            originalContent = preElement.textContent; // Store current raw markdown
+            preElement.contentEditable = true;
+            preElement.focus();
             editBtn.style.display = 'none';
             saveBtn.style.display = 'inline-block';
             cancelBtn.style.display = 'inline-block';
         });
 
         saveBtn.addEventListener('click', () => {
-            const editedMarkdown = reportContentDiv.textContent; // Get edited raw markdown
+            const editedMarkdown = preElement.textContent; // Get edited raw markdown
             const validation = validateMarkdownContent(editedMarkdown);
             if (!validation.isValid) {
                 alert(`Invalid report structure. Missing sections: ${validation.missingSections.join(', ')}. Please ensure all required sections are present.`);
                 return;
             }
-            reportContentDiv.textContent = editedMarkdown; // Display the edited raw markdown
-            reportContentDiv.contentEditable = false;
+            preElement.textContent = editedMarkdown; // Display the edited raw markdown
+            preElement.contentEditable = false;
             editBtn.style.display = 'inline-block';
             saveBtn.style.display = 'none';
             cancelBtn.style.display = 'none';
         });
 
         cancelBtn.addEventListener('click', () => {
-            reportContentDiv.textContent = originalContent; // Revert to the original raw markdown
-            reportContentDiv.contentEditable = false;
+            preElement.textContent = originalContent; // Revert to the original raw markdown
+            preElement.contentEditable = false;
             editBtn.style.display = 'inline-block';
             saveBtn.style.display = 'none';
             cancelBtn.style.display = 'none';
