@@ -324,7 +324,7 @@
                 return '<p>Error: Invalid report content</p>';
             }
 
-            // Step 1: Basic cleaning
+            // Basic cleaning
             let cleaned = content
                 .replace(/```markdown/g, '')
                 .replace(/```/g, '')
@@ -332,116 +332,48 @@
                 .replace(/\r\n/g, '\n') // Normalize line endings
                 .trim();
 
-            // Step 2: Process document structure
-            const lines = cleaned.split('\n');
-            let processedLines = [];
-            let inTable = false;
-            let inList = false;
-            let listIndent = 0;
-
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i];
-                const trimmedLine = line.trim();
-
-                // Handle horizontal rules
-                if (trimmedLine === '---') {
-                    processedLines.push('');
-                    processedLines.push(line);
-                    processedLines.push('');
-                    continue;
-                }
-
-                // Handle tables
-                if (trimmedLine.includes('|')) {
-                    if (!inTable) {
-                        processedLines.push(''); // Add space before table
-                        inTable = true;
-                    }
-                    processedLines.push(line);
-                    continue;
-                } else if (inTable) {
-                    inTable = false;
-                    processedLines.push(''); // Add space after table
-                }
-
-                // Handle headings
-                if (trimmedLine.startsWith('#')) {
-                    // Add space before heading (except for first heading)
-                    if (i > 0) {
-                        processedLines.push('');
-                    }
-                    processedLines.push(line);
-                    processedLines.push(''); // Add space after heading
-                    continue;
-                }
-
-                // Handle lists
-                if (/^[-*+]\s/.test(trimmedLine) || /^\d+\.\s/.test(trimmedLine)) {
-                    if (!inList) {
-                        processedLines.push(''); // Add space before list
-                        inList = true;
-                    }
-                    processedLines.push(line);
-                    continue;
-                }
-
-                // Handle indented list items
-                if (inList && (line.startsWith(' ') || line.startsWith('\t'))) {
-                    processedLines.push('    ' + trimmedLine);
-                    continue;
-                }
-
-                // End of list
-                if (inList && trimmedLine !== '') {
-                    processedLines.push(''); // Add space after list
-                    inList = false;
-                }
-
-                // Regular content
-                processedLines.push(line);
-            }
-
-            cleaned = processedLines.join('\n');
-
-            // Step 3: Normalize spacing
-            cleaned = cleaned
-                .replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines
-                .replace(/([^\n])\n([#-*])/g, '$1\n\n$2') // Add space before headings and lists
-                .replace(/([#-*])\n([^\n])/g, '$1\n\n$2'); // Add space after headings and lists
-
-            // Step 4: Configure marked options
+            // Configure marked options
             marked.setOptions({
-                gfm: true, // GitHub Flavored Markdown
-                breaks: true, // Convert line breaks to <br>
-                headerIds: true, // Add IDs to headers
-                mangle: false, // Don't escape HTML
-                sanitize: false, // Allow HTML
-                smartLists: true, // Use smarter list behavior
-                smartypants: true, // Use "smart" typographic punctuation
-                xhtml: false, // Don't use xhtml
-                tables: true // Enable table support
+                gfm: true,
+                breaks: true,
+                headerIds: true,
+                mangle: false,
+                sanitize: false,
+                smartLists: true,
+                smartypants: true,
+                xhtml: false,
+                tables: true
             });
 
-            // Step 5: Process the markdown
+            // Process the markdown
             let html = marked.parse(cleaned);
 
-            // Step 6: Apply custom styling
+            // Apply custom styling for status and trend indicators
             html = html
-                // Status indicators
                 .replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>')
                 .replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>')
                 .replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>')
                 .replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>')
                 .replace(/<strong>RISK<\/strong>/g, '<span class="status-high">RISK</span>')
-                // Trend indicators
                 .replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>')
                 .replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>')
                 .replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
 
-            // Step 7: Enhance tables
+            // Enhance tables with Bootstrap classes and proper styling
             html = html
                 .replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered table-striped">')
-                .replace(/<\/table>/g, '</table></div>');
+                .replace(/<\/table>/g, '</table></div>')
+                // Add specific styling for table cells containing status and trend indicators
+                .replace(/<td>([^<]*)(RISK|ON TRACK|MEDIUM RISK)([^<]*)<\/td>/g, 
+                    '<td>$1<span class="status-' + 
+                    (RegExp.$2 === 'ON TRACK' ? 'low' : 
+                     RegExp.$2 === 'MEDIUM RISK' ? 'medium' : 'high') + 
+                    '">$2</span>$3</td>')
+                .replace(/<td>([^<]*)(↑|↓|→)([^<]*)<\/td>/g, 
+                    '<td>$1<span class="trend-' + 
+                    (RegExp.$2 === '↑' ? 'up' : 
+                     RegExp.$2 === '↓' ? 'down' : 'neutral') + 
+                    '">$2$3</span></td>');
 
             return html;
         }
