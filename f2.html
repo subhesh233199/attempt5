@@ -315,6 +315,13 @@
                 return '<p>Error: Invalid report content</p>';
             }
             let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
+            
+            // --- NEW PRE-PROCESSING FOR HEADINGS ---
+            // This regex matches a character that is NOT a newline, followed by a heading marker (#, ##, ### etc.) and a space.
+            // It inserts two newlines before the heading marker to ensure proper block separation for Marked.js.
+            cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
+            // --- END NEW PRE-PROCESSING ---
+
             let html = marked.parse(cleaned);
             html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
             html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
@@ -459,6 +466,7 @@
 
         editBtn.addEventListener('click', () => {
             originalContent = reportContentDiv.innerHTML; // Store current displayed HTML
+            // Removed: originalMarkdown = localStorage.getItem('savedReportContent') || '';
             reportContentDiv.contentEditable = true;
             reportContentDiv.focus();
             editBtn.style.display = 'none';
@@ -474,7 +482,7 @@
                 alert(`Invalid report structure. Missing sections: ${validation.missingSections.join(', ')}. Please ensure all required sections are present.`);
                 return;
             }
-            // No longer saving to local storage
+            // Removed: localStorage.setItem('savedReportContent', markdownContent);
             const reprocessedContent = processMarkdownContent(markdownContent);
             reportContentDiv.innerHTML = reprocessedContent;
             reportContentDiv.contentEditable = false;
@@ -485,7 +493,7 @@
 
         cancelBtn.addEventListener('click', () => {
             reportContentDiv.innerHTML = originalContent; // Revert to the HTML before editing
-            // No longer restoring from local storage
+            // Removed: localStorage.setItem('savedReportContent', originalMarkdown);
             reportContentDiv.contentEditable = false;
             editBtn.style.display = 'inline-block';
             saveBtn.style.display = 'none';
