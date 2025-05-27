@@ -332,8 +332,12 @@
                 .replace(/\r\n/g, '\n') // Normalize line endings
                 .trim();
 
-            // Simple heading spacing - this was working before
-            cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
+            // Handle headings with proper spacing
+            cleaned = cleaned
+                // Add newline after headings that are followed by text
+                .replace(/(#+ [^\n]+)\n([^\n#])/g, '$1\n\n$2')
+                // Add newline before headings
+                .replace(/([^\n])(#+ )/g, '$1\n\n$2');
 
             // Configure marked options
             marked.setOptions({
