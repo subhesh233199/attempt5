@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRR Analysis Tool</title>
+    <!-- Tailwind CSS CDN for professional styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.12/lib/marked.min.js"></script>
+    <style>
+        /* Custom styles for markdown content */
+        #report-content {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        #report-content h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: #1a202c;
+        }
+        #report-content h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+        #report-content h3 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #4a5568;
+        }
+        #report-content p {
+            margin-bottom: 1rem;
+            color: #4a5568;
+        }
+        #report-content ul {
+            list-style-type: disc;
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+            color: #4a5568;
+        }
+        #report-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        #report-content th,
+        #report-content td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        #report-content th {
+            background-color: #f7fafc;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        #report-content tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        #report-content strong {
+            font-weight: bold;
+            color: #2b6cb0;
+        }
+        /* Hide edit textarea by default */
+        #report-editor {
+            display: none;
+        }
+        /* Style for loading state */
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background-color: #edf2f7;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4 text-center">RRR Analysis Tool</h1>
+        <p class="text-lg text-gray-600 mb-8 text-center">Efficiently analyze your PDF documents</p>
+
+        <!-- Input Folder Section -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Input Folder</h2>
+            <div class="flex space-x-4">
+                <input type="text" id="folder-path" class="flex-grow p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter folder path">
+                <button id="analyze-btn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Analyze Documents</button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="text-gray-600">
+            <p class="text-lg font-semibold">Loading...</p>
+            <p>Analyzing PDFs... This may take a few moments.</p>
+        </div>
+
+        <!-- Analysis Report Section -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Analysis Report</h2>
+            <div id="report-content" class="prose prose-sm"></div>
+            <textarea id="report-editor" class="w-full h-96 p-2 border border-gray-300 rounded-lg hidden"></textarea>
+            <div class="mt-4 flex space-x-4">
+                <button id="edit-report-btn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Edit Report</button>
+                <button id="save-changes-btn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 hidden">Save Changes</button>
+                <button id="cancel-btn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 hidden">Cancel</button>
+                <button id="download-pdf-btn" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500">Download as PDF</button>
+            </div>
+        </div>
+
+        <!-- Visualizations Section (Untouched) -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Visualizations</h2>
+            <div id="visualizations"></div>
+        </div>
+
+        <!-- Evaluation Section (Untouched) -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Evaluation</h2>
+            <div id="evaluation"></div>
+        </div>
+
+        <!-- Hyperlinks Section (Untouched) -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Hyperlinks</h2>
+            <div id="hyperlinks"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const folderPathInput = document.getElementById('folder-path');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loadingDiv = document.getElementById('loading');
+        const reportContent = document.getElementById('report-content');
+        const reportEditor = document.getElementById('report-editor');
+        const editReportBtn = document.getElementById('edit-report-btn');
+        const saveChangesBtn = document.getElementById('save-changes-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const downloadPdfBtn = document.getElementById('download-pdf-btn');
+
+        let originalReport = '';
+
+        // Handle Analyze button click
+        analyzeBtn.addEventListener('click', async () => {
+            const folderPath = folderPathInput.value.trim();
+            if (!folderPath) {
+                alert('Please enter a folder path');
+                return;
+            }
+
+            loadingDiv.style.display = 'block';
+            reportContent.innerHTML = '';
+            reportEditor.style.display = 'none';
+            saveChangesBtn.classList.add('hidden');
+            cancelBtn.classList.add('hidden');
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ folder_path: folderPath })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Analysis failed: ' + response.statusText);
+                }
+
+                const data = await response.json();
+                originalReport = data.report;
+
+                // Parse and render markdown report
+                reportContent.innerHTML = marked.parse(originalReport, {
+                    gfm: true,
+                    breaks: true,
+                    tables: true
+                });
+
+                loadingDiv.style.display = 'none';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to analyze documents: ' + error.message);
+                loadingDiv.style.display = 'none';
+            }
+        });
+
+        // Handle Edit Report button click
+        editReportBtn.addEventListener('click', () => {
+            reportEditor.value = originalReport;
+            reportContent.style.display = 'none';
+            reportEditor.style.display = 'block';
+            editReportBtn.classList.add('hidden');
+            saveChangesBtn.classList.remove('hidden');
+            cancelBtn.classList.remove('hidden');
+        });
+
+        // Handle Save Changes button click
+        saveChangesBtn.addEventListener('click', () => {
+            originalReport = reportEditor.value;
+            reportContent.innerHTML = marked.parse(originalReport, {
+                gfm: true,
+                breaks: true,
+                tables: true
+            });
+            reportContent.style.display = 'block';
+            reportEditor.style.display = 'none';
+            editReportBtn.classList.remove('hidden');
+            saveChangesBtn.classList.add('hidden');
+            cancelBtn.classList.add('hidden');
+        });
+
+        // Handle Cancel button click
+        cancelBtn.addEventListener('click', () => {
+            reportContent.innerHTML = marked.parse(originalReport, {
+                gfm: true,
+                breaks: true,
+                tables: true
+            });
+            reportContent.style.display = 'block';
+            reportEditor.style.display = 'none';
+            editReportBtn.classList.remove('hidden');
+            saveChangesBtn.classList.add('hidden');
+            cancelBtn.classList.add('hidden');
+        });
+
+        // Handle Download as PDF (Placeholder for actual PDF generation)
+        downloadPdfBtn.addEventListener('click', () => {
+            alert('PDF download functionality requires a backend endpoint or client-side PDF library.');
+            // Future implementation: Use a library like jsPDF or backend endpoint
+        });
+    </script>
+</body>
+</html>
