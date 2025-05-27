@@ -316,11 +316,11 @@
             }
             let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
             
-            // --- NEW PRE-PROCESSING FOR HEADINGS ---
+            // --- PRE-PROCESSING FOR HEADINGS (INCLUDING SUBHEADINGS) ---
             // This regex matches a character that is NOT a newline, followed by a heading marker (#, ##, ### etc.) and a space.
             // It inserts two newlines before the heading marker to ensure proper block separation for Marked.js.
             cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
-            // --- END NEW PRE-PROCESSING ---
+            // --- END PRE-PROCESSING ---
 
             let html = marked.parse(cleaned);
             html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
@@ -466,7 +466,6 @@
 
         editBtn.addEventListener('click', () => {
             originalContent = reportContentDiv.innerHTML; // Store current displayed HTML
-            // Removed: originalMarkdown = localStorage.getItem('savedReportContent') || '';
             reportContentDiv.contentEditable = true;
             reportContentDiv.focus();
             editBtn.style.display = 'none';
