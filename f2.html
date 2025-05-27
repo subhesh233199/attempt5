@@ -391,7 +391,7 @@
             return html;
         }
 
-        // Original processMarkdownContent, now without table handling
+        // Original processMarkdownContent, now with additional list preprocessing
         function processMarkdownContent(content) {
             if (typeof content !== 'string') {
                 console.error('processMarkdownContent: Input is not a string:', content);
@@ -400,8 +400,36 @@
             let cleaned = content.replace(/```markdown/g, '').replace(/```/g, '');
             
             // --- PRE-PROCESSING FOR HEADINGS (INCLUDING ALL SUBHEADINGS H1-H6) ---
+            // This regex matches a character that is NOT a newline, followed by a heading marker (#, ##, ### etc.) and a space.
+            // It inserts two newlines before the heading marker to ensure proper block separation for Marked.js.
             cleaned = cleaned.replace(/([^\n])(#+ )/g, '$1\n\n$2');
             // --- END PRE-PROCESSING ---
+
+            // --- PRE-PROCESSING FOR LISTS TO NORMALIZE INDENTATION ---
+            // Replace non-breaking spaces (U+00A0) with regular spaces (U+0020) FIRST
+            cleaned = cleaned.replace(/\u00A0/g, ' ');
+
+            // This regex looks for lines that start with a number followed by a dot and a space (list item)
+            // and then subsequent lines that are indented with more than 4 spaces or a mix of spaces/tabs.
+            // It aims to normalize indentation to a consistent 4 spaces for continuation lines.
+            // It replaces:
+            // Group 1: The start of the list item (e.g., "1. **First Finding**")
+            // Group 2: The excessive indentation (e.g., "    " or "\t")
+            // Group 3: The continuation text (e.g., "Across versions...")
+            cleaned = cleaned.replace(/^(\d+\.\s+.*)\n(\s{4,}|[\t]+)(.+)$/gm, (match, listItemStart, indent, continuationText) => {
+                // Ensure that continuation lines are indented by 4 spaces.
+                // If they are currently indented by more, or with tabs, normalize it.
+                return `${listItemStart}\n    ${continuationText.trim()}`;
+            });
+            // This also handles cases where a line just has a few spaces then content, ensuring it's part of the prev line
+            // This looks for a line that's not empty, followed by a newline, then a line that starts with 1-3 spaces
+            // and is not a new list item marker (*, -, +, 1.)
+            cleaned = cleaned.replace(/^(\s*[*-]?\s*.*[^\n])\n(\s{1,3}[^\s*-])/gm, (match, previousLine, currentLineStart) => {
+                // If the current line starts with 1-3 spaces and is not a new list item, attach it to the previous.
+                return `${previousLine.trim()} ${currentLineStart.trim()}`;
+            });
+            // --- END PRE-PROCESSING FOR LISTS ---
+
 
             // Marked.js will now parse everything EXCEPT the tables (which are already HTML)
             let html = marked.parse(cleaned);
