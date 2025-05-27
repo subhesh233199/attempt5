@@ -411,9 +411,10 @@
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
 
-                // Directly use the report content from the backend response
-                const reportContent = processMarkdownContent(response.data.report);
-                document.getElementById('reportContent').innerHTML = reportContent;
+                // Directly process and display the report content from the backend
+                const reportMarkdownFromServer = response.data.report;
+                const processedHtmlReport = processMarkdownContent(reportMarkdownFromServer);
+                document.getElementById('reportContent').innerHTML = processedHtmlReport;
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
                     `<div class="col-md-6 mb-4">
@@ -455,7 +456,7 @@
         const saveBtn = document.getElementById('saveReportBtn');
         const cancelBtn = document.getElementById('cancelEditBtn');
         let originalContent = '';
-        // No need for originalMarkdown as we are not saving to local storage
+        // originalMarkdown is no longer needed since we are not using localStorage
 
         editBtn.addEventListener('click', () => {
             originalContent = reportContentDiv.innerHTML; // Store current displayed HTML
