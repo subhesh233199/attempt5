@@ -318,20 +318,15 @@
             return markdown; 
         }
 
-        function processMarkdownContent(content) {
-            console.log('processMarkdownContent called with:', content);
-            
-            if (typeof content !== 'string') {
-                console.error('processMarkdownContent: Input is not a string:', content);
-                return '<p>Error: Invalid report content</p>';
-            }
-
-            // Just convert markdown to HTML, nothing else
-            const html = marked.parse(content);
-            console.log('Marked.js output:', html);
-            return html;
-        }
-
+        function processMarkdownContent(content) {    
+    if (typeof content !== 'string') {
+        console.error('processMarkdownContent: Input is not a string:', content);
+        return '<p>Error: Invalid report content</p>';
+    }
+    // Directly convert markdown to HTML using marked.parse
+    const html = marked.parse(content);
+    return html;
+}
         // The htmlToMarkdown function as provided in the previous full file
         function htmlToMarkdown(htmlContent) {
             const parser = new DOMParser();
