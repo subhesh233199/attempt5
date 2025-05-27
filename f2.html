@@ -343,41 +343,42 @@
         });
 
         function processMarkdownContent(content) {
-        if (typeof content !== 'string') {
-            console.error('processMarkdownContent: Input is not a string:', content);
-            return '<p>Error: Invalid report content</p>';
-        }
-    
-        // Clean up triple backticks and extra markdown block wrappers
-        let cleaned = content.replace(/```markdown\s*/g, '').replace(/```/g, '');
-    
-        // Normalize heading spacing to ensure parsing
-        cleaned = cleaned.replace(/([^\n])\n(#+ )/g, '$1\n\n$2');
-    
-        // Normalize bullet and numbered lists (add newline before list start)
-        cleaned = cleaned.replace(/([^\n])\n(- |\d+\.\s)/g, '$1\n\n$2');
-    
-        // Make sure horizontal rules render
-        cleaned = cleaned.replace(/\n-{3,}\n/g, '\n\n---\n\n');
-    
-        // Convert markdown to HTML
-        let html = marked.parse(cleaned);
-    
-        // Convert bold risk levels into styled spans
-        html = html.replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>');
-        html = html.replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
-        html = html.replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>');
-        html = html.replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-low">ON TRACK</span>');
-        html = html.replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>');
-        html = html.replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>');
-        html = html.replace(/<strong>→<\/strong>/g, '<span class="trend-neutral">→</span>');
-    
-        // Enhance table responsiveness and styling
-        html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
-        html = html.replace(/<\/table>/g, '</table></div>');
-    
-        return html;
+    if (typeof content !== 'string') {
+        console.error('Invalid markdown content');
+        return '<p>Error: Invalid report content</p>';
     }
+
+    // Remove Markdown code block wrappers
+    let cleaned = content.replace(/```markdown\\s*/g, '').replace(/```/g, '');
+
+    // Add newlines before headings
+    cleaned = cleaned.replace(/([^\\n])\\n(#+ )/g, '$1\\n\\n$2');
+
+    // Ensure spacing before lists
+    cleaned = cleaned.replace(/([^\\n])\\n(- |\\d+\\. )/g, '$1\\n\\n$2');
+
+    // Normalize horizontal rules
+    cleaned = cleaned.replace(/\\n-{3,}\\n/g, '\\n\\n---\\n\\n');
+
+    // Run through marked.js
+    let html = marked.parse(cleaned);
+
+    // Style enhancements
+    html = html.replace(/<strong>HIGH RISK<\\/strong>/g, '<span class="status-high">HIGH RISK</span>');
+    html = html.replace(/<strong>MEDIUM RISK<\\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>');
+    html = html.replace(/<strong>LOW RISK<\\/strong>/g, '<span class="status-low">LOW RISK</span>');
+    html = html.replace(/<strong>ON TRACK<\\/strong>/g, '<span class="status-low">ON TRACK</span>');
+    html = html.replace(/<strong>(↑ \\([^<]+\\))<\\/strong>/g, '<span class="trend-up">$1</span>');
+    html = html.replace(/<strong>(↓ \\([^<]+\\))<\\/strong>/g, '<span class="trend-down">$1</span>');
+    html = html.replace(/<strong>→<\\/strong>/g, '<span class="trend-neutral">→</span>');
+
+    // Bootstrap-styled table wrappers
+    html = html.replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">');
+    html = html.replace(/<\/table>/g, '</table></div>');
+
+    return html;
+}
+
 
 
         function htmlToMarkdown(htmlContent) {
