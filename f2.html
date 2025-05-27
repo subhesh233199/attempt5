@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Consolas:wght@400&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -392,6 +392,16 @@
             margin: 0 0.2em;
         }
 
+        #report-content .status-needs-review {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--accent-color);
+            padding: 0.3em 0.6em;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-block;
+            margin: 0 0.2em;
+        }
+
         #report-content .trend-up {
             color: var(--danger-color);
             font-weight: 600;
@@ -431,7 +441,8 @@
         #report-content td.status-medium,
         #report-content td.status-low,
         #report-content td.status-on-track,
-        #report-content td.status-risk {
+        #report-content td.status-risk,
+        #report-content td.status-needs-review {
             text-align: center;
             font-weight: 600;
         }
@@ -558,7 +569,6 @@
             justify-content: flex-end;
         }
 
-        /* Preserved styles for other sections */
         .metrics-summary-tables {
             display: flex;
             flex-wrap: wrap;
@@ -577,7 +587,6 @@
             font-size: 0.9rem;
         }
 
-        /* Evaluation Card Styles */
         .evaluation-card {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             border-radius: 10px;
@@ -805,52 +814,55 @@
                 return '<div class="error-message">Error: Invalid report content</div>';
             }
 
-            // Clean up the markdown content
+            console.debug('Raw Markdown input:', content);
+
+            // Normalize the markdown content
             let cleaned = content
                 .trim()
-                .replace(/^```markdown\n/, '')
-                .replace(/\n```$/, '')
-                .replace(/\r\n/g, '\n')
-                .replace(/\r/g, '\n')
-                // Normalize headers
-                .replace(/^#\s+(.+)$/gm, '# $1')
-                .replace(/^##\s+(.+)$/gm, '## $1')
-                .replace(/^###\s+(.+)$/gm, '### $1')
-                // Normalize lists
-                .replace(/^-\s+(.+)$/gm, '- $1')
-                .replace(/^\d+\.\s+(.+)$/gm, '$&')
+                .replace(/^```markdown\n|\n```$/g, '') // Remove code fences
+                .replace(/\r\n/g, '\n') // Normalize line endings
+                .replace(/^#\s*(.+)$/gm, '# $1') // Normalize headers
+                .replace(/^##\s*(.+)$/gm, '## $1')
+                .replace(/^###\s*(.+)$/gm, '### $1')
+                .replace(/^####\s*(.+)$/gm, '#### $1')
+                .replace(/^-\s+(.+)$/gm, '- $1') // Normalize lists
+                .replace(/^\d+\.\s+(.+)$/gm, '1. $1')
                 // Normalize tables
-                .replace(/\|\s*-\s*\|/g, '| --- |')
-                // Normalize status indicators
-                .replace(/\*\*(HIGH RISK)\*\*/g, '**$1**')
-                .replace(/\*\*(MEDIUM RISK)\*\*/g, '**$1**')
-                .replace(/\*\*(LOW RISK)\*\*/g, '**$1**')
-                .replace(/\*\*(ON TRACK)\*\*/g, '**$1**')
-                .replace(/\*\*(RISK)\*\*/g, '**$1**')
-                // Normalize trend indicators
-                .replace(/\*\*(↑ \([^)]+\))\*\*/g, '**$1**')
-                .replace(/\*\*(↓ \([^)]+\))\*\*/g, '**$1**')
-                .replace(/\*\*(→)\*\*/g, '**$1**');
+                .replace(/^\|\s*(.*?)\s*\|$/gm, (match, row) => {
+                    let cells = row.split('|').map(cell => cell.trim()).filter(cell => cell);
+                    return `| ${cells.join(' | ')} |`;
+                })
+                .replace(/^\|[\s-:\|]+\|$/gm, (match) => {
+                    let cells = match.split('|').filter(cell => cell.trim()).length;
+                    return `| ${Array(cells).fill('---').join(' | ')} |`;
+                })
+                // Normalize statuses
+                .replace(/\*\*(HIGH RISK|MEDIUM RISK|LOW RISK|ON TRACK|RISK|NEEDS REVIEW)\*\*/g, '**$1**')
+                // Normalize trends
+                .replace(/(↑|↓|→)\s*(\(\d+\.\d+%\))/g, '$1 $2')
+                .replace(/[4t\/]/g, '→')
+                .replace(/\s{2,}/g, ' ')
+                .replace(/\|\s*\n/g, '|\n');
+
+            console.debug('Cleaned Markdown:', cleaned);
 
             try {
-                // Parse markdown to HTML
                 let html = marked.parse(cleaned);
 
-                // Process status indicators
+                // Post-process HTML
                 html = html
-                    .replace(/<strong>HIGH RISK<\/strong>/g, '<span class="status-high">HIGH RISK</span>')
+                    .replace(/<strong>(HIGH RISK|RISK)<\/strong>/g, '<span class="status-risk">$1</span>')
                     .replace(/<strong>MEDIUM RISK<\/strong>/g, '<span class="status-medium">MEDIUM RISK</span>')
                     .replace(/<strong>LOW RISK<\/strong>/g, '<span class="status-low">LOW RISK</span>')
                     .replace(/<strong>ON TRACK<\/strong>/g, '<span class="status-on-track">ON TRACK</span>')
-                    .replace(/<strong>RISK<\/strong>/g, '<span class="status-risk">RISK</span>')
-                    // Process trend indicators
-                    .replace(/<strong>(↑ \([^<]+\))<\/strong>/g, '<span class="trend-up">$1</span>')
-                    .replace(/<strong>(↓ \([^<]+\))<\/strong>/g, '<span class="trend-down">$1</span>')
-                    .replace(/<strong>→<\/strong>/g, '<span class="trend-stable">→</span>')
-                    // Make tables responsive
+                    .replace(/<strong>NEEDS REVIEW<\/strong>/g, '<span class="status-needs-review">NEEDS REVIEW</span>')
+                    .replace(/>(↑ \([\d.]+\%\))</g, '><span class="trend-up">$1</span><')
+                    .replace(/>(↓ \([\d.]+\%\))</g, '><span class="trend-down">$1</span><')
+                    .replace(/>(→)</g, '><span class="trend-stable">$1</span><')
                     .replace(/<table>/g, '<div class="table-responsive"><table class="table table-bordered">')
                     .replace(/<\/table>/g, '</table></div>');
 
+                console.debug('Rendered HTML:', html);
                 return html;
             } catch (e) {
                 console.error('Markdown parsing error:', e);
@@ -890,11 +902,9 @@
                 document.getElementById('evaluation').style.display = 'block';
                 document.getElementById('hyperlinks').style.display = 'block';
 
-                // Process report content
                 const reportContent = response.data.report || 'No report content provided.';
                 document.getElementById('report-content').innerHTML = processMarkdownContent(reportContent);
 
-                // Visualizations section (unchanged)
                 if (response.data.visualizations && response.data.visualizations.length > 0) {
                     const vizContent = response.data.visualizations.map((base64, index) =>
                         `<img src="data:image/png;base64,${base64}" alt="Data visualization ${index + 1}" loading="lazy">`
@@ -904,7 +914,6 @@
                     document.getElementById('visualizations-content').innerHTML = 'No visualizations available.';
                 }
 
-                // Evaluation section (unchanged)
                 const evaluation = response.data.evaluation || {};
                 const evaluationContent = `
                     <div class="evaluation-card">
@@ -915,7 +924,6 @@
                 `;
                 document.getElementById('e-content').innerHTML = evaluationContent;
 
-                // Hyperlinks section (unchanged)
                 if (response.data.hyperlinks && response.data.hyperlinks.length > 0) {
                     const hyperlinksList = response.data.hyperlinks.map(link => `
                         <div>
@@ -983,6 +991,7 @@
             editBtn.style.display = 'none';
             saveBtn.style.display = 'inline-block';
             cancelBtn.style.display = 'inline-block';
+            saveBtn();
         });
 
         saveBtn.addEventListener('click', () => {
