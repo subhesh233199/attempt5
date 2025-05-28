@@ -33,7 +33,7 @@
 
         .card {
             margin-bottom: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             border: none;
             border-radius: 10px;
             overflow: hidden;
@@ -58,7 +58,7 @@
             border-radius: 8px;
             padding: 15px;
             background: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .loading {
@@ -139,35 +139,15 @@
             font-size: 0.9em;
         }
 
-        .status-high {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger-color);
-        }
-
-        .status-medium {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning-color);
-        }
-
-        .status-low {
-            background-color: rgba(40, 167, 69, 0.1);
-            color: var(--success-color);
-        }
-
-        .trend-up {
-            color: var(--success-color);
-        }
-
-        .trend-down {
-            color: var(--danger-color);
-        }
-
-        .trend-neutral {
-            color: var(--accent-color);
-        }
+        .status-high { background-color: rgba(220, 53, 69, 0.1); color: var(--danger-color); }
+        .status-medium { background-color: rgba(255, 193, 7, 0.1); color: var(--warning-color); }
+        .status-low { background-color: rgba(40, 167, 69, 0.1); color: var(--success-color); }
+        .trend-up { color: var(--success-color); }
+        .trend-down { color: var(--danger-color); }
+        .trend-neutral { color: var(--accent-color); }
 
         .input-group {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             border-radius: 8px;
             overflow: hidden;
         }
@@ -201,7 +181,7 @@
             border-radius: 10px;
             padding: 20px;
             margin: 20px 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .score-display {
@@ -217,7 +197,7 @@
             padding: 20px;
             margin: 15px 0;
             border-left: 4px solid var(--primary-color);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             transition: transform 0.2s ease;
         }
 
@@ -279,10 +259,9 @@
     </style>
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js" integrity="sha512-LhccdVNGe2QMEfI3x4DVV3ckMRe36TfydKss6mJpdHjNFiV07dFpS2xzeZedptKZrwxfICJpez09iNioiSZ3hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.js" integrity="sha512-lK6oZEScytehJvHjR7R03NENoR6dMjpv7PkyQacFi8rux5YxIaYu7tsOCGbZ/RRH8GFnR82LOAp267kxD+q+qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <div class="container">
         <h1 class="mb-4 text-center" style="color: var(--primary-color);">RRR Analysis Tool</h1>
-
+       
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Enter Folder Path</h5>
@@ -348,7 +327,7 @@
             </div>
         </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js" integrity="sha512-LhccdVNGe2QMEfI3x4DVV3ckMRe36TfydKss6mJpdHjNFiV07dFpS2xzeZedptKZrwxfICJpez09iNioiSZ3hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.js" integrity="sha512-lK6oZEScytehJvHjR7R03NENoR6dMjpv7PkyQacFi8rux5YxIaYu7tsOCGbZ/RRH8GFnR82LOAp267kxD+q+qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script>
         // Verify Showdown is loaded
@@ -440,12 +419,6 @@
                 // Convert markdown to HTML and display
                 const reportContent = document.getElementById('reportContent');
                 console.log('Raw markdown content before conversion:', rawMarkdown.substring(0, 100) + '...');
-                const html_content=processMarkdownContent(rawMarkdown);
-                console.log(html_content)
-                if (reportContent){
-                reportContent.innerHTML = html_content;
-                console.log('reportContent',reportContent.innerHTML)    
-                }
                 reportContent.innerHTML = processMarkdownContent(rawMarkdown);
 
                 // Ensure the report content is visible and editor is hidden
@@ -454,9 +427,9 @@
 
                 // Show download buttons
                 document.getElementById('downloadHtmlBtn').style.display = 'inline-block';
-                document.getElementById('downloadPdfBtn').style.display = 'inline-block';
+                document.getElementById('downloadPdfBtn'). style.display = 'inline-block';
 
-                const vizContent = response.data.visualizations.map((base64, index) => 
+                const vizContent = response.data.visualizations.map((base64, index) =>
                     `<div class="col-md-6 mb-4">
                         <img src="data:image/png;base64,${base64}" class="visualization" alt="Visualization ${index + 1}">
                     </div>`
@@ -502,6 +475,7 @@
         const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
         const downloadPdfBtn = document.getElementById('downloadPdfBtn');
         let originalMarkdown = ''; // Stores the raw markdown content before editing
+
         let currentVisualizationBase64 = null; // Store base64 of the first visualization
 
         editBtn.addEventListener('click', () => {
@@ -550,7 +524,7 @@
         function downloadHtml() {
             const reportHtml = reportContentDiv.innerHTML;
             const visualizationsHtml = document.getElementById('visualizationsContent').innerHTML;
-            
+           
             const fullHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -586,7 +560,7 @@
 </body>
 </html>
             `;
-            
+           
             const blob = new Blob([fullHtml], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -602,14 +576,14 @@
         function downloadPdf() {
             const reportElement = document.getElementById('reportContent');
             const visualizationsElement = document.getElementById('visualizationsContent');
-            
+           
             const pdfContent = document.createElement('div');
             pdfContent.appendChild(reportElement.cloneNode(true));
-            
+           
             if (visualizationsElement) {
                 pdfContent.appendChild(visualizationsElement.cloneNode(true));
             }
-            
+           
             const options = {
                 margin: 10,
                 filename: 'analysis_report.pdf',
@@ -617,7 +591,7 @@
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-            
+           
             html2pdf().from(pdfContent).set(options).save();
         }
 
