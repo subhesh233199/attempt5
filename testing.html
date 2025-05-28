@@ -340,27 +340,6 @@
             openLinksInNewWindow: true
         });
 
-        // Test with sample markdown data
-        const testMarkdown = `# Test Heading
-
-## Test Table
-| Release | Value | Trend | Status |
-|---------|-------|-------|--------|
-| 24.10   | 149   | →     | RISK   |
-| 25.1    | 42    | ↓     | ON TRACK |
-
-### Test List
-- Item 1
-- Item 2
-  - Subitem 1
-  - Subitem 2`;
-
-        // Test the conversion
-        console.log('Test markdown:', testMarkdown);
-        const testHtml = converter.makeHtml(testMarkdown);
-        console.log('Converted HTML:', testHtml);
-        document.getElementById('reportContent').innerHTML = testHtml;
-
         function processMarkdownContent(content) {
             if (typeof content !== 'string') {
                 console.error('processMarkdownContent: Input is not a string:', content);
@@ -403,9 +382,42 @@
 
                 // Store raw markdown and display rendered HTML
                 const markdownEditor = document.getElementById('markdownEditor');
+                const reportContent = document.getElementById('reportContent');
+                
+                // Store the markdown
                 markdownEditor.value = response.data.report;
-                const htmlContent = processMarkdownContent(response.data.report);
-                document.getElementById('reportContent').innerHTML = htmlContent;
+                
+                // Convert and display with proper styling
+                const htmlContent = converter.makeHtml(response.data.report);
+                reportContent.innerHTML = htmlContent;
+
+                // Add Bootstrap classes to tables
+                const tables = reportContent.getElementsByTagName('table');
+                for (let table of tables) {
+                    table.classList.add('table', 'table-bordered', 'table-striped');
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-responsive';
+                    table.parentNode.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                }
+
+                // Add styling to status indicators
+                const statusElements = reportContent.querySelectorAll('td:contains("RISK"), td:contains("ON TRACK"), td:contains("MEDIUM RISK")');
+                for (let element of statusElements) {
+                    const text = element.textContent.trim();
+                    const statusClass = text.includes('ON TRACK') ? 'status-low' :
+                                      text.includes('MEDIUM RISK') ? 'status-medium' : 'status-high';
+                    element.innerHTML = `<span class="${statusClass}">${text}</span>`;
+                }
+
+                // Add styling to trend indicators
+                const trendElements = reportContent.querySelectorAll('td:contains("↑"), td:contains("↓"), td:contains("→")');
+                for (let element of trendElements) {
+                    const text = element.textContent.trim();
+                    const trendClass = text.includes('↑') ? 'trend-up' :
+                                     text.includes('↓') ? 'trend-down' : 'trend-neutral';
+                    element.innerHTML = `<span class="${trendClass}">${text}</span>`;
+                }
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
                     `<div class="col-md-6 mb-4">
