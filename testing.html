@@ -82,6 +82,7 @@
             border-radius: 8px;
             border: 1px solid #e0e0e0;
             background-color: #f8f9fa;
+            white-space: pre-wrap;
         }
 
         .markdown-container h1 {
@@ -395,13 +396,14 @@
                     .replace(/\r\n/g, '\n')      // Normalize line endings
                     .trim();                     // Trim leading/trailing whitespace
 
-                // Store cleaned markdown in the editor (useful for inspection)
+                // Store cleaned markdown in the editor
                 const markdownEditor = document.getElementById('markdownEditor');
                 markdownEditor.value = rawMarkdown;
 
-                // Display raw markdown text for immediate readability
+                // Convert markdown to HTML and display
                 const reportContent = document.getElementById('reportContent');
-                reportContent.textContent = rawMarkdown;
+                console.log('Raw markdown content before conversion:', rawMarkdown);
+                reportContent.innerHTML = processMarkdownContent(rawMarkdown);
 
                 // Ensure the report content is visible and editor is hidden
                 markdownEditor.style.display = 'none';
@@ -480,7 +482,7 @@
                 return;
             }
             markdownEditor.value = editedMarkdown;
-            reportContentDiv.textContent = editedMarkdown;
+            reportContentDiv.innerHTML = processMarkdownContent(editedMarkdown);
             markdownEditor.style.display = 'none';
             reportContentDiv.style.display = 'block';
             editBtn.style.display = 'inline-block';
@@ -492,7 +494,7 @@
 
         cancelBtn.addEventListener('click', () => {
             markdownEditor.value = originalMarkdown;
-            reportContentDiv.textContent = originalMarkdown;
+            reportContentDiv.innerHTML = processMarkdownContent(originalMarkdown);
             markdownEditor.style.display = 'none';
             reportContentDiv.style.display = 'block';
             editBtn.style.display = 'inline-block';
@@ -504,7 +506,7 @@
 
         // Function to generate and download HTML report
         function downloadHtml() {
-            const reportHtml = reportContentDiv.textContent;
+            const reportHtml = reportContentDiv.innerHTML;
             const visualizationsHtml = document.getElementById('visualizationsContent').innerHTML;
             
             const fullHtml = `
