@@ -259,7 +259,6 @@
     </style>
 </head>
 <body>
-    <!-- Rest of the HTML remains the same -->
     <div class="container">
         <h1 class="mb-4 text-center" style="color: var(--primary-color);">RRR Analysis Tool</h1>
         
@@ -331,6 +330,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script>
+        // Verify Showdown is loaded
+        if (typeof showdown === 'undefined') {
+            console.error('Showdown library failed to load. Please check the script source.');
+            alert('Error: Showdown library not loaded. Markdown rendering may not work.');
+        }
+
         // Configure showdown
         const converter = new showdown.Converter({
             tables: true,
@@ -349,14 +354,16 @@
         function processMarkdownContent(content) {
             if (typeof content !== 'string') {
                 console.error('processMarkdownContent: Input is not a string:', content);
-                return '<p>Error: Invalid report content</p>';
+                return '<div class="error">Error: Invalid report content (not a string)</div>';
             }
             try {
-                // Convert markdown to HTML using showdown
-                return converter.makeHtml(content);
+                console.log('Converting markdown to HTML:', content.substring(0, 100) + '...');
+                const html = converter.makeHtml(content);
+                console.log('Rendered HTML:', html.substring(0, 100) + '...');
+                return html;
             } catch (error) {
                 console.error('Error converting markdown to HTML:', error);
-                return '<p>Error: Failed to render markdown content</p>';
+                return '<div class="error">Error: Failed to render markdown content - ' + error.message + '</div>';
             }
         }
 
@@ -383,9 +390,12 @@
             document.getElementById('analyzeBtn').disabled = true;
 
             try {
+                console.log('Sending request to analyze:', folderPath);
                 const response = await axios.post('http://127.0.0.1:8080/analyze', {
                     folder_path: folderPath
                 });
+
+                console.log('Received response:', response.data);
 
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
@@ -408,7 +418,7 @@
 
                 // Convert markdown to HTML and display
                 const reportContent = document.getElementById('reportContent');
-                console.log('Raw markdown content before conversion:', rawMarkdown);
+                console.log('Raw markdown content before conversion:', rawMarkdown.substring(0, 100) + '...');
                 reportContent.innerHTML = processMarkdownContent(rawMarkdown);
 
                 // Ensure the report content is visible and editor is hidden
@@ -417,7 +427,7 @@
 
                 // Show download buttons
                 document.getElementById('downloadHtmlBtn').style.display = 'inline-block';
-                document.getElementById('downloadPdfBtn').style.display = 'inline-block';
+                document.getElementById('downloadPdfBtn'). style.display = 'inline-block';
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
                     `<div class="col-md-6 mb-4">
@@ -450,7 +460,7 @@
                 document.getElementById('hyperlinksContent').innerHTML = hyperlinksContent;
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error during analysis:', error);
                 alert('Error: ' + (error.response?.data?.detail || error.message));
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('analyzeBtn').disabled = false;
@@ -532,7 +542,6 @@
         th { background-color: #f2f2f2; }
         .table-responsive { overflow-x: auto; margin-bottom: 1rem; }
         .visualization { max-width: 100%; height: auto; margin: 15px 0; border: 1px solid #e0e0e0; padding: 15px; background: white; }
-        /* Add styles for status and trend indicators if needed in the downloaded HTML */
         .status-high { color: #dc3545; }
         .status-medium { color: #ffc107; }
         .status-low { color: #28a745; }
@@ -568,13 +577,11 @@
             const reportElement = document.getElementById('reportContent');
             const visualizationsElement = document.getElementById('visualizationsContent');
             
-            // Create a container div with content to be converted
             const pdfContent = document.createElement('div');
-            pdfContent.appendChild(reportElement.cloneNode(true)); // Clone report content
+            pdfContent.appendChild(reportElement.cloneNode(true));
             
-            // Add all visualizations to the PDF content
             if (visualizationsElement) {
-                pdfContent.appendChild(visualizationsElement.cloneNode(true)); // Clone the entire visualizations section
+                pdfContent.appendChild(visualizationsElement.cloneNode(true));
             }
             
             const options = {
@@ -585,11 +592,9 @@
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             
-            // Use html2pdf to generate and download the PDF
             html2pdf().from(pdfContent).set(options).save();
         }
 
-        // Add event listeners for the new download buttons
         downloadHtmlBtn.addEventListener('click', downloadHtml);
         downloadPdfBtn.addEventListener('click', downloadPdf);
     </script>
