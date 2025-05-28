@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RRR Analysis Tool</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.0/lib/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <style>
         :root {
             --primary-color: #2a3f5f;
@@ -325,13 +325,50 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script>
+        // Configure showdown
+        const converter = new showdown.Converter({
+            tables: true,
+            tasklists: true,
+            strikethrough: true,
+            emoji: true,
+            underline: true,
+            ghCodeBlocks: true,
+            parseImgDimensions: true,
+            simplifiedAutoLink: true,
+            tablesHeaderId: true,
+            ghMentions: true,
+            openLinksInNewWindow: true
+        });
+
+        // Test with sample markdown data
+        const testMarkdown = `# Test Heading
+
+## Test Table
+| Release | Value | Trend | Status |
+|---------|-------|-------|--------|
+| 24.10   | 149   | →     | RISK   |
+| 25.1    | 42    | ↓     | ON TRACK |
+
+### Test List
+- Item 1
+- Item 2
+  - Subitem 1
+  - Subitem 2`;
+
+        // Test the conversion
+        console.log('Test markdown:', testMarkdown);
+        const testHtml = converter.makeHtml(testMarkdown);
+        console.log('Converted HTML:', testHtml);
+        document.getElementById('reportContent').innerHTML = testHtml;
+
         function processMarkdownContent(content) {
             if (typeof content !== 'string') {
                 console.error('processMarkdownContent: Input is not a string:', content);
                 return '<p>Error: Invalid report content</p>';
             }
-            // Convert markdown to HTML using marked
-            return marked.parse(content);
+
+            // Convert markdown to HTML using showdown
+            return converter.makeHtml(content);
         }
 
         function validateMarkdownContent(content) {
