@@ -391,7 +391,7 @@
                 const htmlContent = converter.makeHtml(response.data.report);
                 reportContent.innerHTML = htmlContent;
 
-                // Add Bootstrap classes to tables
+                // Add Bootstrap classes to tables and process cells for styling
                 const tables = reportContent.getElementsByTagName('table');
                 for (let table of tables) {
                     table.classList.add('table', 'table-bordered', 'table-striped');
@@ -399,24 +399,31 @@
                     wrapper.className = 'table-responsive';
                     table.parentNode.insertBefore(wrapper, table);
                     wrapper.appendChild(table);
+
+                    // Process each cell in the table for status and trend indicators
+                    const cells = table.getElementsByTagName('td');
+                    for (let cell of cells) {
+                        const text = cell.textContent.trim();
+
+                        // Process status indicators
+                        if (text.includes('RISK') || text.includes('ON TRACK') || text.includes('MEDIUM RISK')) {
+                            const statusClass = text.includes('ON TRACK') ? 'status-low' :
+                                              text.includes('MEDIUM RISK') ? 'status-medium' : 'status-high';
+                            cell.innerHTML = `<span class="${statusClass}">${text}</span>`;
+                        }
+                        // Process trend indicators
+                        else if (text.includes('↑') || text.includes('↓') || text.includes('→')) {
+                            const trendClass = text.includes('↑') ? 'trend-up' :
+                                             text.includes('↓') ? 'trend-down' : 'trend-neutral';
+                            cell.innerHTML = `<span class="${trendClass}">${text}</span>`;
+                        }
+                    }
                 }
 
-                // Add styling to status indicators
-                const statusElements = reportContent.querySelectorAll('td:contains("RISK"), td:contains("ON TRACK"), td:contains("MEDIUM RISK")');
-                for (let element of statusElements) {
-                    const text = element.textContent.trim();
-                    const statusClass = text.includes('ON TRACK') ? 'status-low' :
-                                      text.includes('MEDIUM RISK') ? 'status-medium' : 'status-high';
-                    element.innerHTML = `<span class="${statusClass}">${text}</span>`;
-                }
-
-                // Add styling to trend indicators
-                const trendElements = reportContent.querySelectorAll('td:contains("↑"), td:contains("↓"), td:contains("→")');
-                for (let element of trendElements) {
-                    const text = element.textContent.trim();
-                    const trendClass = text.includes('↑') ? 'trend-up' :
-                                     text.includes('↓') ? 'trend-down' : 'trend-neutral';
-                    element.innerHTML = `<span class="${trendClass}">${text}</span>`;
+                // Add styling to headings (optional, but good for consistency)
+                const headings = reportContent.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                for (let heading of headings) {
+                    heading.classList.add('mb-3');
                 }
 
                 const vizContent = response.data.visualizations.map((base64, index) => 
